@@ -1,14 +1,25 @@
 function [h5Data, varargout] = h5extract(filename)
 %h5extract Extracts the data from a .h5 file into a Matlab structure.
 %
-% h5Data = h5extract() will open up a dialogue box prompting the user to
-% select a .h5 file. The data will then be extracted from that file.
+% Syntax:  
+%   - Extract the raw data from the .h5 file using 'uigetfile' to select
+%     the .h5 file.
+%           h5Data = h5extract() 
 %
-% h5Data = h5extract(filename) will extract all the data from the .h5 file
-% given by the path 'filename'.
+%   - Extract the raw data from the .h5 by specifying the file.
+%       filename = 'myExampleFile.h5';
+%       h5Data   = h5extract(filename);
 %
-% [h5Data, Meta] = h5extract(...) will return the meta data for the .h5
-% file. This is the same as the output from h5info(filename).
+%   - Extract the raw data and the h5 meta information from a file.
+%       filename         = 'myExampleFile.h5';
+%       [h5Data, h5Meta] = h5extract(filename);
+%     N.B. h5Meta is the same as the output from using MATLAB's built-in
+%          h5info(filename).
+%
+%   - Extract the raw data, the h5 meta and the formatted results from the
+%     .h5 file.
+%       filename = 'myExampleFile.h5';
+%       [h5Data, h5Meta, h5Results] = h5extract(filename);
 %
 % Detailed Explanation:
 %   - The Matlab structure 'h5Data' preserves the hierachy of the .h5 file
@@ -22,8 +33,7 @@ function [h5Data, varargout] = h5extract(filename)
 %   (NH5RDB)"
 %
 % Author    : Christopher Szczyglowski
-% Username  : cs1414
-% Email     : cs1414@bristol.ac.uk
+% Email     : chris.szczyglowski@gmail.com
 % Timestamp : 30-Nov-2017 14:55:25
 %
 % Copyright (c) 2017 Christopher Szczyglowski
@@ -43,6 +53,9 @@ if nargin == 0
         filename = fullfile(filepath, filename);
     end
 end
+
+assert(exist(filename, 'file') == 2, ['File ''%s'' does not exist. Check ', ...
+    'the filename and try again.'], filename);
 
 %Check extension
 [~, ~, ext] = fileparts(filename);
@@ -568,3 +581,15 @@ end
     end
 
 end
+
+% function rng = range(num)
+% %range Overloads the built-in MATLAB 'range' function.
+% %
+% % Detailed Description: 
+% %   - The 'range' function is packaged with the 'Statistics and Machine
+% %   Learning Toolbox' 
+% 
+% 
+% rng = range(num);
+% 
+% end
