@@ -6,7 +6,8 @@ function FEModel = importBulkData(bulkFilename)
 %	- Brief explanation of the syntax...
 %
 % Detailed Description:
-%	- Detailed explanation of the function and how it works...
+%	- Supports INCLUDE statements (in the entry point file and any nested
+%	  INCLUDE files).
 %
 % References:
 %	[1]. "Can quantum-mechanical description of physical reality be
@@ -26,9 +27,8 @@ function FEModel = importBulkData(bulkFilename)
 %
 % <end_of_pre_formatted_H1>
 
-FEModel = [];
-logfcn  = @(s) fprintf('%s\n', s);
-
+FEModel  = [];
+logfcn   = @(s) fprintf('%s\n', s);
 validExt = {'.dat', '.bdf'};
 
 %Prompt user if no file is provided
@@ -50,13 +50,42 @@ assert(exist(bulkFilename, 'file') == 2, ['File ''%s'' does not exist. Check ', 
 [~, ~, ext] = fileparts(bulkFilename);
 assert(any(strcmp(ext, validExt)), ['Expected the file extension to be ', ...
     'one of the following:\n\n\t%s'], strjoin(validExt, '\n\t'));
+
+%Import the data and return the 'bulk.FEModel' object
+[FEModel, skippedCards] = importBulkDataFromFile(bulkFilename, logfcn);
+
+%Build connections
+makeIndices(FEModel);
+
+%Print a summary of all the data contained in the file and any
+%embedded files
+summary = summarise(FEModel);
+logfcn(sprintf('Extraction summary :\n'));
+logfcn(sprintf(['The following cards have been extracted ', ...
+    'successfully from the file ''%s'':\n\t%-s\n'], ...
+    bulkFilename, sprintf('%s\n\t', summary{:})));
+logfcn(sprintf(['The following cards have not been extracted ', ...
+    'from the file ''%s'':\n\n\t%-s\n'], bulkFilename, ...
+    sprintf('%s\n\t', skippedCards{:})));
+
+end
+
+%Master function (recursive)
+
+function [FEM, unknownBulk] = importBulkDataFromFile(bulkFilename, logfcn)
+%importBulkDataFromFile Imports the bulk data from the file and returns an
+%instance of the 'bulk.FEModel' class.
+
 filepath = fileparts(bulkFilename);
+if isempty(filepath)
+    filepath = pwd;
+end
 
 %Get raw text from the file
 rawFileData = readCharDataFromFile(bulkFilename, logfcn);
 
 %Split into Executive Control, Case Control and Bulk Data
-[EC, CC, BD] = splitInputFile(rawFileData, logfcn);
+[~, CC, BD] = splitInputFile(rawFileData, logfcn);
 
 %Extract "NASTRAN SYSTEM" commands from Executive Control
 
@@ -69,22 +98,24 @@ rawFileData = readCharDataFromFile(bulkFilename, logfcn);
 [IncludeFiles, BD] = extractIncludeFiles(BD, logfcn, filepath);
 
 %Extract bulk data
-[FEM, UnknownBulk] = extractBulkData(BD, logfcn);
+[FEM, unknownBulk] = extractBulkData(BD, logfcn);
 
 %Loop through INCLUDE files (recursively)
-[data, aerodata, leftover] = cellfun(@(x) i_import_msc_txt(obj, x, logfcn), ...
+[data, leftover] = cellfun(@(x) importBulkDataFromFile(x, logfcn), ...
     IncludeFiles, 'Unif', false);
 
-if ~isempty(data) || ~isempty(aerodata)
+if ~isempty(data)
     logfcn(sprintf('Combining bulk data in file ''%s''.', filename));
+    error('Update code');
 end
 
 %Combine data & diagnostics from INCLUDE data
-cellfun(@(x) addBulk(FEM , x), data    , 'Unif', false);
-cellfun(@(x) addBulk(AFEM, x), aerodata, 'Unif', false);
-UnknownBulk = [UnknownBulk, cat(2, leftover{:})];
+% cellfun(@(x) addBulk(FEM , x), data    , 'Unif', false);
+unknownBulk = [unknownBulk, cat(2, leftover{:})];
 
 end
+
+%Reading raw text from file
 
 function rawFileData = readCharDataFromFile(filename, logfcn)
 %readCharDataFromFile Reads the data from the file as literal text.
@@ -112,6 +143,8 @@ fclose(fileID);
 %TODO - Check if all data has less than 80 characters
 
 end
+
+%Partitioning the Nastran input file
 
 function [execControl, caseControl, bulkData] = splitInputFile(data, logfcn)
 %splitInputFile Splits the cell-string data in 'data' into
@@ -277,11 +310,13 @@ function [FEM, UnknownBulk] = extractBulkData(BulkData, logfcn)
 logfcn('Extracting bulk data...');
 
 %Preallocate
-FEM = bulk.FEModel(); 
+FEM = bulk.FEModel();
 UnknownBulk = {};
 
 %project folder
 prj = 'bulk';
+
+BulkDataMask = defineBulkMask();
 
 %Extract all card names and continuation entries (for indexing)
 col1 = cellfun(@(x) x(1 : 8), BulkData, 'Unif', false);
@@ -325,44 +360,46 @@ for iCard = 1 : numel(cardNames)
     
     %Initialise the card
     str = [prj, '.', cn];
-    if exist(str, 'class')
+    
+    %Check it exists, if not, check the mask for a synonym class.
+    if exist(str, 'class') ~= 8
+        bClass = false;
+        if isfield(BulkDataMask, cn)
+            str = BulkDataMask.(cn);
+            bClass = true;
+        end
+    end
+    
+    %If the class exists then we can import the data, if not, skip it
+    if bClass
         
         %Tell the user
         logfcn(sprintf('%-10s %-8s (%8i)', 'Extracting', ...
             cn, nCard));
         
         %Initialise the object
-        fcn = str2func(str);
-        card = arrayfun(@(i) fcn(), 1 : nCard, 'Unif', false);
-        card = horzcat(card{:});
-        %card(nCard) = fcn();
-        
-        %Check that the card is a valid bulk data object
-        validateBulk(card);
+        fcn     = str2func(str);
+        BulkObj = fcn(cn, nCard);
         
         %Which cards are wide-field format?
-        isWF  = contains(col1(idx), '*');
-        set(card(isWF) , 'ColWidth', 16);
-        set(card(~isWF), 'ColWidth', 8);
+%         isWF  = contains(col1(idx), '*');
+%         set(card(isWF) , 'ColWidth', 16);
+%         set(card(~isWF), 'ColWidth', 8);
         
         %Loop through each instance of 'card' in 'BulkData'
-        for iObj = 1 : nCard %extract properties
+        for iCard = 1 : nCard %extract properties
             %TODO - Update 'getCardData' so that it just
             %returns the cell array of data and doesn't set the
             %data. Do the setting outside the loop.
             %Extract raw text data for this card
-            [cardData, ~] = mni.Entity.getCardData(BulkData, ind(iObj));
+            [cardData, ~] = getCardData(BulkData, ind(iCard));
             %Extract values from raw text data and assign to
             %the object
-            extractCardData(card(iObj), cardData);
+            extractCardData(BulkObj, cardData, iCard);
         end
         
-        %Add object to the model
-        if isa(card, 'mni.bulk.AeroBulkData')
-            addBulk(AFEM, card);
-        else
-            addBulk(FEM, card);
-        end
+        %Add object to the model        
+        addBulk(FEM, BulkObj);
         
         clear card
         
@@ -378,7 +415,146 @@ for iCard = 1 : numel(cardNames)
             '%8s - %6i entry/entries', cn, nCard); %#ok<AGROW>
         
     end
+    
 end
+
+end
+
+%Reading text data as bulk data
+
+function [cardData, cardIndex] = getCardData(data, startIndex)
+%getCardData Extracts the MSC.Nastran bulk data for a given card from the
+%cell array 'data'. The card begins at 'startIndex' and the card data is
+%extracted by searching 'data' for the continuation entries relating to
+%this card.
+%
+% Inputs
+%   - 'data'       : Cell array of character arrays containing the raw text
+%                    output from the text file that is being read.
+%   - 'startIndex' : Index number relating to cell entry in 'data' that
+%                    contains the first line of the bulk data card. This is
+%                    the line where the function will begin extracting
+%                    data.
+% Outputs
+%   - 'cardData'  : Cell array containing the entries from 'data' that
+%                   relate to the card described on data(startIndex).
+%   - 'cardIndex' : Index number of all the entries extracted from 'data'.
+%
+% TODO : Add in check for a continuation entry in column 10. This will be
+%        specific key that must be searched for in column 1 of the file.
+
+%How many lines in the data set?
+nLines = numel(data);
+
+%Check for rubbish input
+if startIndex > nLines
+    cardData = {};
+    return
+end
+
+%Grab card data
+lineData  = data{startIndex};
+cardIndex = startIndex;
+
+%Check for data in column 10
+[cardData{1}, endCol] = i_removeEndColumn(lineData);
+
+%If 'endCol' is empty then the card is not using continuation
+%entries in column 10 to identify the data.
+%   -> Read next line until we find new data
+if isempty(endCol)
+    
+    %Define next index number
+    nextIndex = startIndex + 1;
+    
+    %Check if we have reached the end of the file
+    if nextIndex <= nLines
+        
+        %Grab data from next line
+        nextLine = data{nextIndex};
+        
+        %Check for data in column 10
+        [nextLine, endCol] = i_removeEndColumn(nextLine);
+        
+        %Check following lines for continuation entries
+        while iscont(nextLine)
+            %Append to 'cardData' and update counter
+            cardIndex = [cardIndex, nextIndex]; %#ok<*AGROW>
+            cardData  = [cardData, {nextLine}];
+            nextIndex = nextIndex + 1;
+            if nextIndex > nLines
+                return
+            end
+            nextLine  = data{nextIndex};
+        end
+        
+    end
+    
+else
+    %If 'endCol' is NOT empty then the card is using
+    %continuation entries in column 10 to identify the data.
+    %   -> Search the data for the continuation key
+    
+    %Keep going until there are no more continuations to read
+    while ~isempty(endCol)
+        
+        %Find the continuation line
+        %   - Can be anywhere in the file
+        index = find(contains(data, endCol));
+        if isempty(index)
+            error('Continuation entry is not in this file. Update code so we can search all other files as well');
+        end
+        
+        %Remove lines we already know about
+        index(index == startIndex) = [];
+        
+        %Should only be one line that starts with this
+        %continuation...
+        assert(numel(index) == 1, 'Non-unique continuation entry found');
+        
+        %Grab card data & update index numbers
+        lineData           = data{index};
+        cardIndex(end + 1) = index;
+        startIndex         = index;
+        
+        %Check for data in column 10
+        [cardData{end + 1}, endCol] = i_removeEndColumn(lineData);
+        
+    end
+    
+end
+
+    function [lineData, endCol] = i_removeEndColumn(lineData)
+        %i_removeEndColumn If the character array 'lineData' has
+        %more than 72 characters then this function trims any
+        %additional characters and returns them in the variable
+        %'endCol'. The first 72 (or fewer) characters are returned
+        %in the variable 'lineData'.
+        
+        %Sensible default
+        endCol = '';
+        
+        %Check for free-field
+        if contains(lineData, ',')
+            %Search for continuation token
+            ind = strfind(lineData(2:end), '+');
+            if ~isempty(ind)
+                endCol   = strtrim(lineData(ind + 1 : end));
+                lineData = lineData(1 : ind - 1); %Skip the comma!
+            end
+            return
+        end
+        
+        %If the line does not go to 72 characters then no change
+        if numel(lineData) < 73
+            return
+        end
+        
+        endCol   = strtrim(lineData(73 : end));
+        lineData = lineData(1  : 72);
+        
+    end
+
 end
 
 function tf = iscont(str)
@@ -395,6 +571,18 @@ if isequal(str(1), '*') || contains(str(1:8), '+') || ...
 else
     tf = false;
 end
+
+end
+
+function BulkDataMask = defineBulkMask()
+
+BulkDataMask = struct();
+
+BulkDataMask.GRID   = 'bulk.Node';
+BulkDataMask.SPOINT = 'bulk.Node';
+BulkDataMask.CBAR   = 'bulk.Beam';
+BulkDataMask.CBEAM  = 'bulk.Beam';
+BulkDataMask.CROD   = 'bulk.Beam';
 
 end
 
