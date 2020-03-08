@@ -39,7 +39,7 @@ Give an example
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
+Please read [CONTRIBUTING.md](https://github.com/ChristopherSzczyglowski/Matran/blob/master/CONTRIBUTING) for details on our code of conduct, and the process for submitting pull requests to us.
 
 ## Versioning
 
@@ -53,7 +53,7 @@ See also the list of [contributors](https://github.com/ChristopherSzczyglowski/M
 
 ## License
 
-This project is licensed under the Apache License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the Apache License - see the [LICENSE.md](https://github.com/ChristopherSzczyglowski/Matran/blob/master/LICENSE) file for details
 
 ## Acknowledgments
 
