@@ -592,6 +592,7 @@ BulkDataMask.PBAR   = 'bulk.BeamProp';
 BulkDataMask.PBEAM  = 'bulk.BeamProp';
 BulkDataMask.PROD   = 'bulk.BeamProp';
 BulkDataMask.MAT1   = 'bulk.Material';
+BulkDataMask.SPC1   = 'bulk.Constraint';
 
 end
 
