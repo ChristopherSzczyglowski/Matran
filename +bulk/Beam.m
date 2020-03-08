@@ -5,9 +5,9 @@ classdef Beam < bulk.BulkData
     % data type from MSC.Nastran.
     %
     % Valid Bulk Data Types:
-    %   - 'CBEAM'
+    %   - 'CBEAM' -> TODO
     %   - 'CBAR'
-    %   - 'CROD'
+    %   - 'CROD'  -> TODO
     
     %Primary Properties
     properties
@@ -65,10 +65,7 @@ classdef Beam < bulk.BulkData
     
     methods % construction
         function obj = Beam(varargin)
-            
-            %Pass it on
-            obj = obj@bulk.BulkData(varargin{:});
-            
+                        
             %Initialise the bulk data sets
             addBulkDataSet(obj, 'CBAR', ...
                 'BulkProps'  , {'EID', 'PID', 'GA_GB', 'X', 'OFFT'}, ...
@@ -77,6 +74,7 @@ classdef Beam < bulk.BulkData
                 'PropMask'   , {'GA_GB', 2, 'X', 3}, ...
                 'Connections', {'GA_GB', 'bulk.Node', 'Nodes'});
             
+            varargin = parse(obj, varargin{:});
             preallocate(obj);
             
         end
