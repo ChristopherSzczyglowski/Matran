@@ -3,16 +3,17 @@ function FEModel = importBulkData(bulkFilename)
 %returns a 'bulk.FEModel' object containing the data.
 %
 % Syntax:
-%	- Brief explanation of the syntax...
+%	- Import a model from a text file (.bdf, .dat)
+%       >> bulkFilename = 'myImportFile.bdf';
+%       >> FEModel = importBulkData(bulkFilename);
 %
 % Detailed Description:
 %	- Supports INCLUDE statements (in the entry point file and any nested
 %	  INCLUDE files).
 %
 % References:
-%	[1]. "Can quantum-mechanical description of physical reality be
-%         considered complete?", A Einstein, Physical Review 47(10):777,
-%         American Physical Society 1935, 0031-899X
+%	[1]. Nastran Getting Started Guide.
+%   [2]. Nastran Quick Reference Guide.
 %
 % Author    : Christopher Szczyglowski
 % Email     : chris.szczyglowski@gmail.com
@@ -106,7 +107,7 @@ rawFileData = readCharDataFromFile(bulkFilename, logfcn);
 
 if ~isempty(data)
     logfcn(sprintf('Combining bulk data in file ''%s''.', filename));
-    error('Update code');
+    error('Update code to handle case with INCLUDE files.');
 end
 
 %Combine data & diagnostics from INCLUDE data
@@ -575,6 +576,10 @@ end
 end
 
 function BulkDataMask = defineBulkMask()
+%defineBulkMask Defines the cross-references between bulk data types and
+%bulk data objects.
+%
+% TODO - Make this generate programtically after the test.
 
 BulkDataMask = struct();
 
@@ -583,6 +588,10 @@ BulkDataMask.SPOINT = 'bulk.Node';
 BulkDataMask.CBAR   = 'bulk.Beam';
 BulkDataMask.CBEAM  = 'bulk.Beam';
 BulkDataMask.CROD   = 'bulk.Beam';
+BulkDataMask.PBAR   = 'bulk.BeamProp';
+BulkDataMask.PBEAM  = 'bulk.BeamProp';
+BulkDataMask.PROD   = 'bulk.BeamProp';
+BulkDataMask.MAT1   = 'bulk.Material';
 
 end
 
