@@ -87,30 +87,171 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             val = obj.BulkDataProps(idx).PropDefault;
         end
     end
-    
-    methods % construction
-        function obj = BulkData(bulkName, nBulk, varargin)
-            %BulkData Constructor for the BulkData object.
+        
+    methods (Sealed, Access = protected) % handling bulk data sets
+        function addBulkDataSet(obj, bulkName, varargin)
+            %addBulkDataSet Defines a new set of bulk data entries.
+            
+            p = inputParser;
+            addRequired(p , 'bulkName'   , @ischar);
+            addParameter(p, 'BulkProps'  , [], @iscellstr);
+            addParameter(p, 'BulkTypes'  , [], @iscellstr);
+            addParameter(p, 'BulkDefault', [], @iscell);
+            addParameter(p, 'PropMask'   , [], @iscell);
+            addParameter(p, 'PropList'   , [], @iscellstr);
+            addParameter(p, 'Connections', [], @iscell);
+            parse(p, bulkName, varargin{:});
+            
+            prpNames   = p.Results.BulkProps;
+            prpTypes   = p.Results.BulkTypes;
+            prpDefault = p.Results.BulkDefault;
+            if isempty(prpNames) || isempty(prpTypes) || isempty(prpDefault)
+                error(['Must specify the ''BulkProps'', ''BulkType'' and ', ...
+                    '''BulkDefault'' in order to add a complete ', ...
+                    '''BulkDataProp'' entry.']);
+            end
+            n = [numel(prpNames), numel(prpTypes), numel(prpDefault)];
+            assert(all(diff(n) == 0), ['The number of ''BulkProps'', ', ...
+                '''PropTypes'' and ''PropDefault'' must be the same.']);
+            propMask = p.Results.PropMask;
+            propList = p.Results.PropList;
+            
+            %Parse
+            if ~isempty(propMask)
+                assert(rem(numel(propMask), 2) == 0, ['Expected the ', ...
+                    '''BulkMask'' to be a cell array of name/value pairs.']);
+                nam = propMask(1 : 2 : end);
+                val = propMask(2 : 2 : end);
+                idx = cellfun(@(x) isprop(obj, x), nam);
+                assert(all(idx), ['All properties referred to in ' , ...
+                    '''PropMask'' must be a valid property of the ', ...
+                    '%s object. The following propertes were not found', ...
+                    '\n\n\t%s\n'], class(obj), strjoin(prpNames(~idx), ', '));
+                arrayfun(@(ii) validateattributes(val{ii}, {'numeric'}, ...
+                    {'scalar', 'integer', 'positive'}, class(obj)), 1 : numel(val));
+            end
+            idx = cellfun(@(x) isprop(obj, x), prpNames);
+            assert(all(idx), ['All ''BulkProps'' must be a valid property ', ...
+                'of the %s object. The following propertes were not ', ...
+                'found\n\n\t%s\n'], class(obj), strjoin(prpNames(~idx), ', '));
+            
+            if ~isempty(propList)
+                idx = cellfun(@(x) isprop(obj, x), propList);
+                assert(all(idx), ['All properties referred to in ' , ...
+                    '''PropList'' must be a valid property of the ', ...
+                    '%s object. The following propertes were not found', ...
+                    '\n\n\t%s\n'], class(obj), strjoin(propList(~idx), ', '));
+            end
+            
+            %Deal with 'Connections'
+            con = p.Results.Connections;
+            if isempty(con)
+                Connections = [];
+            else
+                                
+                assert(mod(numel(con), 3) == 0, ['Expected the ''Connections'' ' , ...
+                    'parameter to be a cell-array with number of elements equal ', ...
+                    'to a multiple of 3.']);
+                
+                %Add the dynamic properties
+                bulkProp = con(1 : 3 : end);
+                bulkType = con(2 : 3 : end);
+                dynProps = con(3 : 3 : end);
+                cellfun(@(x) addDynamicProp(obj, x), dynProps);
+                cellfun(@(x) addDynamicProp(obj, [x, 'Index']), dynProps);
+                
+                Connections = struct('Prop', bulkProp, 'Type', bulkType, 'DynProp', dynProps);
+                
+            end
+            
+            BDS = struct( ...
+                'BulkName'   , bulkName    , ...
+                'BulkProps'  , {prpNames}  , ....
+                'PropTypes'  , {prpTypes}  , ...
+                'PropDefault', {prpDefault}, ...
+                'PropMask'   , {propMask}  , ...
+                'PropList'   , {propList}  , ...
+                'Connections', Connections);
+            
+            if isempty(obj.BulkDataProps)
+                obj.BulkDataProps = BDS;
+            else
+                obj.BulkDataProps = [obj.BulkDataProps, BDS];
+            end
+            
+        end
+        function argOut = parse(obj, varargin)
+            %parse Checks the inputs to the class/subclass constructor.
             %
             % Required Inputs:
             %   - 'bulkName': Name of the bulk data type (e.g. GRID, CBAR)
             %
             % Optional Inputs:
+            %   - 'bulkName': Name of the bulk data type (e.g. GRID, CBAR)
+            %       Default = obj.BulkDataProps(1).BulkName;
             %   - 'nBulk': Number of bulk data entries expected.
             %       Default = 1
+                        
+            %Check user has defined the BulkDatProps
+            msg = sprintf(['Expected the constructor of the %s class to ', ...
+                'define the ''BulkDataProps'' of the object. Define some ', ...
+                'bulk data sets using the ''addBulkDataSet'' method.'], class(obj));
+            vn  = obj.ValidBulkNames;
+            assert(~isempty(vn), msg);
             
-            msg = ['Expected the first argument to the class constructor ', ...
-                'to be the name of the bulk data types.'];
-            assert(nargin > 0, msg);
-            assert(ischar(bulkName), msg);
-            if nargin < 2
-                nBulk = 1;
+            %Define default input
+            if isempty(varargin)
+                assert(~isempty(obj.BulkDataProps), msg);
+                varargin{1} = obj.BulkDataProps(1).BulkName;
             end
+            bulkName = varargin{1};
+            
+            %Parse the 'bulkName'
+            assert(ischar(varargin{1}), ['Expected the first argument to ', ...
+                'the class constructor to be the name of the bulk data type.']);    
+            idx = ismember(vn, bulkName);
+            assert(nnz(idx) == 1, ['The ''CardName'' must match one ', ...
+                '(and only one) of the following tokens:\n\n\t%s\n\n', ...
+                'For a list of valid options type ''help %s''.']     , ...
+                strjoin(vn, ', '), class(obj));
+            
+            %Parse the number of bulk data entries
+            if numel(varargin) < 2
+                varargin{2} = 1;
+            end
+            nBulk = varargin{2};
             validateattributes(nBulk, {'numeric'}, {'scalar', 'integer', ...
                 'finite', 'real', 'positive'}, class(obj), 'NumBulk');
             
             obj.CardName = bulkName;
             obj.NumBulk  = nBulk;
+            
+            varargin([1, 2]) = [];
+            argOut = varargin;
+            
+        end
+        function preallocate(obj)
+            %preallocate Preallocates the various object properties based
+            %on the 'NumBulk' and 'CardName' options.
+            
+            vn  = obj.ValidBulkNames;
+            idx = ismember(vn, obj.CardName);
+            assert(nnz(idx) == 1, ['The ''CardName'' must match one ', ...
+                '(and only one) of the following tokens:\n\n\t%s\n\n', ...
+                'For a list of valid options type ''help %s''.']     , ...
+                strjoin(vn, ', '), class(obj));
+            BulkDataInfo = obj.BulkDataProps(idx);
+            
+            nb = obj.NumBulk;
+            
+            %Real or integer ('r' or 'i') are stored as vectors
+            idxNum  = ismember(BulkDataInfo.PropTypes, {'r', 'i'});
+            set(obj, BulkDataInfo.BulkProps(idxNum), repmat({zeros(1, nb)}, [1, nnz(idxNum)]));
+            
+            %Char data ('c') are stored as cell-strings
+            idxChar = ismember(BulkDataInfo.PropTypes, {'c'});
+            charVal = cellfun(@(x) repmat({x}, [1, nb]), BulkDataInfo.PropDefault(idxChar), 'Unif', false);
+            set(obj, BulkDataInfo.BulkProps(idxChar), charVal);
             
         end
     end
