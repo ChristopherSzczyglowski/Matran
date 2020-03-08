@@ -42,6 +42,9 @@ classdef Dynamicable < dynamicprops
             %class property 'DynamicProps'.
             %
             % See also: dynamicprops.addprop
+             
+            assert(isvarname(prpName), ['The dynamic property must be ' , ...
+                'a valid variable name']);
             
             p = addprop(obj, prpName);
             
