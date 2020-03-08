@@ -368,18 +368,19 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             %assignCardData Assigns the card data for the object by
             %converting the raw text input to numeric/char as necessary.
             %
+            % Detailed Description:
+            %   - This function is called in a loop during the method for
+            %     importing bulk data from a text file (.bdf, .dat). The
+            %     variable 'index' indicates which element of the object
+            %     bulk data will be assigned during this function.
+            %
             % FIXME - This is probably overly complex but I'm hoping it
             % will be a one size fits all solution...
             %
             % TODO - Move the definition of the card format outside the
             % function and pass in as an argument. (Remember this function
             % is called in a loop!!)
-            
-            %Expand card to have full 8 columns of data
-            %   - avoids lots of if/elseif statements
-            nProp    = numel(propData);
-            propData = [propData ; repmat({''}, [8 - nProp, 1])];
-            
+                        
             %Get bulk data names, format & default values
             %   - TODO: Move this outside of the function
             dataNames   = obj.CurrentBulkDataProps;
@@ -401,6 +402,15 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             lb = ub - indices + 1;
             
             dataFormat = horzcat(dataFormat{:});
+            
+            %Expand card to have full columns of data
+            %   - avoids lots of if/elseif statements
+            nProp    = numel(propData);
+            propData = [propData ; repmat({''}, [numel(dataFormat) - nProp, 1])];
+            
+            %Check for scientific notation without 'E'
+            idx = and(contains(propData, '+'), ~contains(propData, 'E'));
+            propData(idx) = strrep(propData(idx), '+', 'E+');
             
             %Convert integer & real data to numeric data
             numIndex   = or(dataFormat == 'i', dataFormat == 'r');
@@ -441,139 +451,6 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
                 newval = horzcat(val{:});
                 
             end
-            
-        end
-        function assignCardData_old(obj, propData, index)
-            %assignCardData
-            
-            error('Update code to check this runs');
-            
-            %Determine which properties have been extracted
-            nProp      = numel(propData);
-            cardProps  = obj.CurrentBulkDataProps;
-            cardFormat = obj.CurrentBulkDataTypes;
-            cardProps  = cardProps(1  : nProp);
-            format     = cardFormat(1 : nProp);
-            
-            %Convert integer & real data to numeric data
-            numIndex = or(format == 'i', format == 'r');
-            numData  = str2double(propData(numIndex));
-            
-            %Check for 'NaN' and set as empty matrix.
-            nanIdx   = isnan(numData);
-            numData  = num2cell(numData);
-            numData(nanIdx)    = {[]};
-            propData(numIndex) = numData;
-            
-            %Assign properties to the object
-            set(obj, cardProps, propData);
-            
-        end
-    end
-    
-    methods (Sealed, Access = protected) % handling bulk data sets
-        function addBulkDataSet(obj, bulkName, varargin)
-            %addBulkDataSet Defines a new set of bulk data entries.
-            
-            p = inputParser;
-            addRequired(p , 'bulkName'   , @ischar);
-            addParameter(p, 'BulkProps'  , [], @iscellstr);
-            addParameter(p, 'BulkTypes'  , [], @iscellstr);
-            addParameter(p, 'BulkDefault', [], @iscell);
-            addParameter(p, 'PropMask'   , [], @iscell);
-            addParameter(p, 'Connections', [], @iscell);
-            parse(p, bulkName, varargin{:});
-            
-            prpNames   = p.Results.BulkProps;
-            prpTypes   = p.Results.BulkTypes;
-            prpDefault = p.Results.BulkDefault;
-            if isempty(prpNames) || isempty(prpTypes) || isempty(prpDefault)
-                error(['Must specify the ''BulkProps'', ''BulkType'' and ', ...
-                    '''BulkDefault'' in order to add a complete ', ...
-                    '''BulkDataProp'' entry.']);
-            end
-            n = [numel(prpNames), numel(prpTypes), numel(prpDefault)];
-            assert(all(diff(n) == 0), ['The number of ''BulkProps'', ', ...
-                '''PropTypes'' and ''PropDefault'' must be the same.']);
-            propMask = p.Results.PropMask;
-            
-            %Parse
-            if ~isempty(propMask)
-                assert(rem(numel(propMask), 2) == 0, ['Expected the ', ...
-                    '''BulkMask'' to be a cell array of name/value pairs.']);
-                nam = propMask(1 : 2 : end);
-                val = propMask(2 : 2 : end);
-                idx = cellfun(@(x) isprop(obj, x), nam);
-                assert(all(idx), ['All properties referred to in ' , ...
-                    '''PropMask'' must be a valid property of the ', ...
-                    '%s object. The following propertes were not found', ...
-                    '\n\n\t%s\n'], class(obj), strjoin(prpNames(~idx), ', '));
-                arrayfun(@(ii) validateattributes(val{ii}, {'numeric'}, ...
-                    {'scalar', 'integer', 'positive'}, class(obj)), 1 : numel(val));
-            end
-            idx = cellfun(@(x) isprop(obj, x), prpNames);
-            assert(all(idx), ['All ''BulkProps'' must be a valid property ', ...
-                'of the %s object. The following propertes were not ', ...
-                'found\n\n\t%s\n'], class(obj), strjoin(prpNames(~idx), ', '));
-            
-            %Deal with 'Connections'
-            con = p.Results.Connections;
-            if isempty(con)
-                Connections = [];
-            else
-                                
-                assert(mod(numel(con), 3) == 0, ['Expected the ''Connections'' ' , ...
-                    'parameter to be a cell-array with number of elements equal ', ...
-                    'to a multiple of 3.']);
-                
-                %Add the dynamic properties
-                bulkProp = con(1 : 3 : end);
-                bulkType = con(2 : 3 : end);
-                dynProps = con(3 : 3 : end);
-                cellfun(@(x) addDynamicProp(obj, x), dynProps);
-                cellfun(@(x) addDynamicProp(obj, [x, 'Index']), dynProps);
-                
-                Connections = struct('Prop', bulkProp, 'Type', bulkType, 'DynProp', dynProps);
-                
-            end
-            
-            BDS = struct( ...
-                'BulkName'   , bulkName  , ...
-                'BulkProps'  , {prpNames}, ....
-                'PropTypes'  , {prpTypes}, ...
-                'PropDefault', {prpDefault}, ...
-                'PropMask'   , {propMask}  , ...
-                'Connections', Connections);
-            
-            if isempty(obj.BulkDataProps)
-                obj.BulkDataProps = BDS;
-            else
-                obj.BulkDataProps = [obj.BulkDataProps, BDS];
-            end
-            
-        end
-        function preallocate(obj)
-            %preallocate Preallocates the various object properties based
-            %on the 'NumBulk' and 'CardName' options.
-            
-            vn  = obj.ValidBulkNames;
-            idx = ismember(vn, obj.CardName);
-            assert(nnz(idx) == 1, ['The ''CardName'' must match one ', ...
-                '(and only one) of the following tokens:\n\n\t%s\n\n', ...
-                'For a list of valid options type ''help %s''.']     , ...
-                strjoin(vn, ', '), class(obj));
-            BulkDataInfo = obj.BulkDataProps(idx);
-            
-            nb = obj.NumBulk;
-            
-            %Real or integer ('r' or 'i') are stored as vectors
-            idxNum  = ismember(BulkDataInfo.PropTypes, {'r', 'i'});
-            set(obj, BulkDataInfo.BulkProps(idxNum), repmat({zeros(1, nb)}, [1, nnz(idxNum)]));
-            
-            %Char data ('c') are stored as cell-strings
-            idxChar = ismember(BulkDataInfo.PropTypes, {'c'});
-            charVal = cellfun(@(x) repmat({x}, [1, nb]), BulkDataInfo.PropDefault(idxChar), 'Unif', false);
-            set(obj, BulkDataInfo.BulkProps(idxChar), charVal);
             
         end
     end
