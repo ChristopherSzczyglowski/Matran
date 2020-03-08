@@ -36,7 +36,7 @@ classdef Dynamicable < dynamicprops
     end
     
     methods (Access = protected)
-        function addDynamicProp(obj, prpName)
+        function p = addDynamicProp(obj, prpName)
             %addDynamicProp Adds a dynamic property to the object and
             %stores a handle to the meta.dynamicproperty object in the
             %class property 'DynamicProps'.
@@ -45,6 +45,10 @@ classdef Dynamicable < dynamicprops
              
             assert(isvarname(prpName), ['The dynamic property must be ' , ...
                 'a valid variable name']);
+            
+            if isprop(obj, prpName)
+                return
+            end
             
             p = addprop(obj, prpName);
             
