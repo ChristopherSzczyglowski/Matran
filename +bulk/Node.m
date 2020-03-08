@@ -98,7 +98,7 @@ classdef Node < bulk.BulkData
             addBulkDataSet(obj, 'GRID', ...
                 'BulkProps'  , {'GID', 'CP', 'X', 'CD', 'PS', 'SEID'}, ...
                 'BulkTypes'  , {'i'  , 'i' , 'r', 'i' , 'c' , 'i'}   , ...
-                'BulkDefault', {''   , 0   , '' , 0   , ''  , 0 }    , ...
+                'BulkDefault', {''   , 0   , 0  , 0   , ''  , 0 }    , ...
                 'PropMask'   , {'X', 3});
             addBulkDataSet(obj, 'SPOINT', ...
                 'BulkProps'  , {'ID'}, ...
@@ -112,19 +112,17 @@ classdef Node < bulk.BulkData
     end
     
     methods % visualisation
-        function hg = drawElement(obj, ha, mode)
+        function hg = drawElement(obj, hAx, mode)
             %drawElement Draws the node objects as a discrete marker and
             %returns a single graphics handle for all the nodes in the
             %collection.
-            %
-            % Accepts a vector of objects.
             
             if nargin < 3
                 mode = [];
             end
             
             coords = getDrawCoords(obj, mode);
-            hg     = drawNodes(coords, ha);
+            hg     = drawNodes(coords, hAx);
             
         end
         function X = getDrawCoords(obj, mode)
