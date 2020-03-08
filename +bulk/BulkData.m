@@ -571,33 +571,6 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
         end        
     end
     
-    methods (Access = protected) % helper functions for visualisation
-        function x = padCoordsWithNaN(~, x)
-            %padCoordsWithNaN Accepts a matrix of [2, N] sets of
-            %coordinates which represent the coordinate of a series of
-            %lines from end-A to end-B and returns a single vector with all
-            %of the coordinates padded by NaN terms.
-            %
-            % This function enables the plotting of line objects to be
-            % vectorised.
-            
-            %Convert to cell so we retain the pairs of coordinates in the
-            %correct order
-            x  = num2cell(x, 1);
-            
-            %Preallocate
-            x_ = cell(1, 2 * numel(x));
-            
-            %Assign the data and NaN terms
-            x_(1 : 2 : end - 1) = x;
-            x_(2 : 2 : end)     = {nan};
-            
-            %Return a column vector
-            x = vertcat(x_{:});
-            
-        end
-    end
-    
     methods % visualisation
         function hg = drawElement(~, ~)
             %drawElement Plots the object in the parent graphics object

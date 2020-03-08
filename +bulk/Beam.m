@@ -88,9 +88,9 @@ classdef Beam < bulk.BulkData
             
             xA = obj.Nodes.X(:, obj.NodesIndex(1, :));
             xB = obj.Nodes.X(:, obj.NodesIndex(2, :));        
-            x  = padCoordsWithNaN(obj, [xA(1, :) ; xB(1, :)]);
-            y  = padCoordsWithNaN(obj, [xA(2, :) ; xB(2, :)]);
-            z  = padCoordsWithNaN(obj, [xA(3, :) ; xB(3, :)]);
+            x  = padCoordsWithNaN([xA(1, :) ; xB(1, :)]);
+            y  = padCoordsWithNaN([xA(2, :) ; xB(2, :)]);
+            z  = padCoordsWithNaN([xA(3, :) ; xB(3, :)]);
             
             hg = line('XData', x, 'YData', y, 'ZData', z, ...
                 'Parent'   , hAx, ...
