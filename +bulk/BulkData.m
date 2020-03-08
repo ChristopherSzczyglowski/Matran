@@ -1,5 +1,11 @@
 classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dynamicable
     %BulkData Base-class of all bulk data objects.
+    %
+    % TODO: Add custom display so only properties of the 'BulkType' are
+    % displayed.
+    % TODO: Change bulk properties to dynamic props for a very lightweight
+    % implementation.
+    % TODO: Update the method for extracting list bulk data
     
     %Visualisation
     properties
@@ -476,22 +482,19 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
                 return
             end
             
-            if ischar(val) %Check for character input
-                valString = val;
-                val       = str2double(val);
-            else
-                %Convert value to a string as it is easier to validate
-                valString = num2str(val);
-            end
-            
+            idxChar = cellfun(@ischar, val);
+            val(idxChar) = cellfun(@str2double, val(idxChar), 'Unif', false);
+            valNum       = horzcat(val{:});
+            valString    = cellfun(@num2str, val, 'Unif', false);
+                        
             %First level of validation to check correct type and attributes
-            validateattributes(val, {'numeric'}, {'scalar', 'integer', ...
+            validateattributes(valNum, {'numeric'}, {'row', 'integer', ...
                 'nonnan', 'finite', 'real'}, class(obj), prpName);
             
             %Second level of validation to check that 'val' is a valid SPC
             
             %Have more than 6 characters been provided?
-            if numel(valString) > 6
+            if any(cellfun(@numel, valString) > 6)
                 throwME_SPC(obj, valString, prpName);
             end
             
@@ -500,42 +503,27 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             if any(cellfun(@(x) ~isempty(x), strfind(cellstr(valString')', '-')))
                 throwME_SPC(obj, valString, prpName);
             end
-            
-            %Get individual numbers
-            valVector = str2num(valString'); %#ok<ST2NM>
-            
+                        
             %Are there any numbers outside the range [1 : 6]?
-            if any(valVector < 0) || any(valVector > 6)
+            if any(contains(valString, {'0', '7', '8', '9'}))
                 throwME_SPC(obj, valString, prpName);
             end
             
-            %Have any numbers been repeated twice?
+            %TODO - Have any numbers been repeated twice?
             
             function throwME_SPC(obj, val, paramName)
                 %throwME_SPC Throws an MException object containing the
                 %error message for a badly formatted SPC entry.
                 
                 %Generate ME object.
-                %                 ME = MException('matlab:awi:BadSPC', ['Value ''%s'' for ', ...
-                %                     'the property ''%s.%s'' in the object %s does not '  , ...
-                %                     'define a valid Single Point Constraint (SPC).\n\n'  , ...
-                %                     'An SPC must be defined using the integers 1 '       , ...
-                %                     'through to 6 and can only have a maximum of 6 '     , ...
-                %                     'numbers. Negative numbers are not allowed.\n\n\t'   , ...
-                %                     'For example, ''123456'' is a valid SPC but '        , ...
-                %                     '''10984'' is not.\n\nFor further information see  ' , ...
-                %                     'the MSC.Nastran Quick Reference Guide.'], ...
-                %                     val, class(obj), paramName, obj.NameTypeID);
-                %
-                ME = MException('matlab:ALENA:BadSPC', ['Value ''%s'' ', ...
+                ME = MException('matlab:Matran:BadSPC', ['Value ', ...
                     'does not define a valid Single Point Constraint (SPC).\n\n', ...
                     'A SPC must be defined using the integers 1 '       , ...
                     'through to 6 and can only have a maximum of 6 '     , ...
                     'numbers. Negative numbers are not allowed.\n\n\t'   , ...
                     'For example, ''123456'' is a valid SPC but '        , ...
                     '''10984'' is not.\n\nFor further information see ' , ...
-                    'the MSC.Nastran Quick Reference Guide.'], ...
-                    val);
+                    'the MSC.Nastran Quick Reference Guide.']);
                 
                 %Throw the ME to the user.
                 throwAsCaller(ME);
