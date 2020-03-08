@@ -462,14 +462,14 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
     end
     
     methods (Sealed) % validation
-        function validateID(obj, val, prpName)       %validateID
+        function validateID(obj, val, prpName)              %validateID
             if isempty(val)
                 return
             end
             validateattributes(val, {'numeric'}, {'integer', '2d', ...
                 'real', 'nonnan', 'nonnegative'}, class(obj), prpName);
         end
-        function validateDOF(obj, val, prpName)      %validateDOF
+        function validateDOF(obj, val, prpName)             %validateDOF
             %validateDOF Checks that 'val' is a valid Degree-of-Freedom
             %(DOF) entry.
             %
@@ -530,7 +530,7 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             end
             
         end
-        function validateReal(obj, val, prpName, extraargs)     %validateReal
+        function validateReal(obj, val, prpName, extraargs) %validateReal
             %validateReal Checks that 'val' is a matrix of real numbers
             
             if nargin < 4
@@ -539,7 +539,7 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             validateattributes(val, {'numeric'}, [{'2d', 'real', ...
                 'finite', 'nonnan'}, extraargs], class(obj), prpName);
         end
-        function validateBeamProp(obj, val, prpName) %validateBeamProp
+        function validateBeamProp(obj, val, prpName)        %validateBeamProp
             %validateBeamProp Checks that the values of the beam property
             %with name 'prpName' matches the expected format.
             %
@@ -549,7 +549,7 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             validateattributes(val, {'numeric'}, {'2d', 'nonempty', ...
                 'finite', 'real', 'nonnan'}, class(obj), prpName);
         end
-        function validateLabel(obj, val, prpName)    %validateLabel
+        function validateLabel(obj, val, prpName)           %validateLabel
             %validateLabel Checks that the value of the label with property
             %name 'prpName' matches the expected format.
             %
