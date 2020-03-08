@@ -488,7 +488,7 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             valString    = cellfun(@num2str, val, 'Unif', false);
                         
             %First level of validation to check correct type and attributes
-            validateattributes(valNum, {'numeric'}, {'row', 'integer', ...
+            validateattributes(valNum(~isnan(valNum)), {'numeric'}, {'row', 'integer', ...
                 'nonnan', 'finite', 'real'}, class(obj), prpName);
             
             %Second level of validation to check that 'val' is a valid SPC
