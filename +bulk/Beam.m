@@ -85,8 +85,6 @@ classdef Beam < bulk.BulkData
             %drawElement Draws the beam objects as a line object between
             %the nodes and returns a single handle for all the beams in the
             %collection.
-            %
-            % Accepts a vector of objects.
             
             xA = obj.Nodes.X(:, obj.NodesIndex(1, :));
             xB = obj.Nodes.X(:, obj.NodesIndex(2, :));        

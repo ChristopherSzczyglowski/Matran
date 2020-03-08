@@ -389,9 +389,6 @@ for iCard = 1 : numel(cardNames)
         
         %Loop through each instance of 'card' in 'BulkData'
         for iCard = 1 : nCard %extract properties
-            %TODO - Update 'getCardData' so that it just
-            %returns the cell array of data and doesn't set the
-            %data. Do the setting outside the loop.
             %Extract raw text data for this card
             [cardData, ~] = getCardData(BulkData, ind(iCard));
             %Extract values from raw text data and assign to
@@ -413,7 +410,7 @@ for iCard = 1 : numel(cardNames)
         
         %Make a note of it
         UnknownBulk{end + 1} = sprintf( ...
-            '%8s - %6i entry/entries', cn, nCard); %#ok<AGROW>
+            '%8s - %6i entry/entries', cn, nCard); 
         
     end
     
@@ -593,6 +590,7 @@ BulkDataMask.PBEAM  = 'bulk.BeamProp';
 BulkDataMask.PROD   = 'bulk.BeamProp';
 BulkDataMask.MAT1   = 'bulk.Material';
 BulkDataMask.SPC1   = 'bulk.Constraint';
+BulkDataMask.CAERO1 = 'bulk.AeroPanel';
 
 end
 
