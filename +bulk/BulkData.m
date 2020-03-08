@@ -471,7 +471,7 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             % combination of the numbers [1,2,3,4,5,6].
             
             assert(iscell(val), ['Expected ''%s'' to be a cell-array ', ...
-                'of DOF identifiers, e.g. ''123456''.']);
+                'of DOF identifiers, e.g. ''123456''.'], prpName);
             if all(cellfun(@isempty, val)) %If it is empty then nothing to check
                 return
             end
@@ -542,15 +542,24 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             end
             
         end
+        function validateReal(obj, val, prpName, extraargs)     %validateReal
+            %validateReal Checks that 'val' is a matrix of real numbers
+            
+            if nargin < 4
+                extraargs = [];
+            end
+            validateattributes(val, {'numeric'}, [{'2d', 'real', ...
+                'finite', 'nonnan'}, extraargs], class(obj), prpName);
+        end
         function validateBeamProp(obj, val, prpName) %validateBeamProp
             %validateBeamProp Checks that the values of the beam property
             %with name 'prpName' matches the expected format.
             %
-            % Each beam property is expected to be a 2 element column
-            % vector of real numbers.
+            % Each beam property is expected to be a 2d matrix of real 
+            % numbers.
             
-            validateattributes(val, {'numeric'}, {'column', 'numel', 2, ...
-                'nonempty', 'finite', 'real', 'nonnan'}, class(obj), prpName);
+            validateattributes(val, {'numeric'}, {'2d', 'nonempty', ...
+                'finite', 'real', 'nonnan'}, class(obj), prpName);
         end
         function validateLabel(obj, val, prpName)    %validateLabel
             %validateLabel Checks that the value of the label with property
