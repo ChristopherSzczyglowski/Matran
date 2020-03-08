@@ -9,13 +9,19 @@ classdef TestMatran < matlab.unittest.TestCase
     % Detailed Description:
     %	- Available tests:
     %       + Importing models
+    %           ImportFromTPLTextFile
+    %   - To run the test 'ImportFromTPLTextFile' the user must set the
+    %     preference 'PathToNastranTPL' on their local user profile. This 
+    %     can  be done via:
+    %       >> setpref('matran', 'PathToNastranTPL', <pathToTPL>);
+    %   The TPL is typically found at
+    %       C:\Program Files\MSC.Software\MSC_Nastran_Documentation\20180\tpl
+    %   where "20180" is the version number.
     %
     % See also: matlab.unittest.TestCase
     %
     % References:
-    %	[1]. "Can quantum-mechanical description of physical reality be
-    %         considered complete?", A Einstein, Physical Review�47(10):777,
-    %         American Physical Society�1935, 0031-899X
+    %	[1]. MSC.Nastran Quick Reference Guide
     %
     % Author    : Christopher Szczyglowski
     % Email     : chris.szczyglowski@gmail.com
@@ -31,7 +37,15 @@ classdef TestMatran < matlab.unittest.TestCase
     % <end_of_pre_formatted_H1>
     
     properties (TestParameter)
-        TextImportFiles = {'C:\Program Files\MSC.Software\MSC_Nastran_Documentation\20180\tpl\doc\dynamics\bd03bar1.dat'};
+        %Files from the Nastran TPL for testing import from raw text file.
+        TPLTextImportFiles = {'\doc\dynamics\bd03bar1.dat'};
+    end
+    
+    properties (Dependent)
+        %Path to the Nastran TPL. User dependent via setpref/getpref
+        PathToNastranTPL
+    end
+    
     methods % set / get
         function val = get.PathToNastranTPL(~)
             if ispref('matran', 'PathToNastranTPL')
@@ -72,9 +86,13 @@ classdef TestMatran < matlab.unittest.TestCase
         end
     end
     
-    methods (Test)
-        function importFromTextFile(obj, TextImportFiles)
-            FEM = importBulkData(TextImportFiles);
+    methods (Test) % importing
+        function importFromTPLTextFile(obj, TPLTextImportFiles)
+            %importFRomTPLTextFile Attempts to import a FE model from a
+            %text file contained in the Nastran Test Problem Library (TPL).
+            
+            file = fullfile(obj.PathToNastranTPL, TPLTextImportFiles);
+            FEM  = importBulkData(file);
             draw(FEM);
         end
     end
