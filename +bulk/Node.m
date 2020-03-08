@@ -93,10 +93,7 @@ classdef Node < bulk.BulkData
     
     methods % construction
         function obj = Node(varargin)
-            
-            %Pass it on
-            obj = obj@bulk.BulkData(varargin{:});
-            
+                        
             %Initialise the bulk data sets
             addBulkDataSet(obj, 'GRID', ...
                 'BulkProps'  , {'GID', 'CP', 'X', 'CD', 'PS', 'SEID'}, ...
@@ -108,6 +105,7 @@ classdef Node < bulk.BulkData
                 'BulkType'   , {'i'} , ...
                 'BulkDefault', {''});
             
+            varargin = parse(obj, varargin{:});
             preallocate(obj);
             
         end
