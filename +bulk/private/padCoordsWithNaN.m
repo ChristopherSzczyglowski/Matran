@@ -1,4 +1,4 @@
-function x = padCoordsWthNaN(x)
+function x = padCoordsWithNaN(x)
 %%padCoordsWithNaN Accepts a matrix of [2, N] sets of coordinates which
 %represent the coordinate of a series of lines from end-A to end-B and
 %returns a single vector with all of the coordinates padded by NaN terms.
