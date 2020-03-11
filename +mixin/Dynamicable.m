@@ -58,6 +58,16 @@ classdef Dynamicable < dynamicprops
                 obj.DynamicProps = [obj.DynamicProps, p];
             end
         end
+        function p = getDynamicProp(obj, prpName)
+            %getDynamicProp Returns the handle to the meta.dynamicProperty
+            %object with name 'prpName'.
+            
+            p = [];
+            if isempty(obj.DynamicProps)
+                return
+            end
+            p = obj.DynamicProps(ismember({obj.DynamicProps.Name}, prpName)); 
+        end
     end
     
 end
