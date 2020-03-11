@@ -9,58 +9,8 @@ classdef Beam < bulk.BulkData
     %   - 'CBAR'
     %   - 'CROD'  -> TODO
     
-    %Primary Properties
-    properties
-        %Identification number
-        EID
-        %
-        PID
-        %
-        GA_GB
-        %
-        X
-        %
-        OFFT = {'GGG'};
-    end
-    
     properties (Constant)
         ValidOffsetToken = {'GGG'};
-    end
-    
-    methods % set/get
-        function set.EID(obj, val)
-            obj.ID = val;
-        end
-        function set.PID(obj, val)
-            validateID(obj, val, 'PID');
-            obj.PID = val;
-        end
-        function set.GA_GB(obj, val)
-            if isrow(val)
-                val = repmat(val, [2, 1]);
-            end
-            validateID(obj, val, 'GA_GB');
-            obj.GA_GB = val;
-        end
-        function set.X(obj, val)
-            if isrow(val)
-                val = repmat(val, [3, 1]);
-            end
-            validateattributes(val, {'numeric'}, {'2d', 'nrows', 3, 'finite', ...
-                'nonnan', 'real'}, class(obj), 'X');
-            obj.X = val;
-        end
-        function set.OFFT(obj, val)
-            msg = sprintf(['Expected ''OFFT'' to be a cell array ', ...
-                'of string with each element being one of the following '  , ...
-                'tokens:\n\n\t- %s\n\n'], strjoin(obj.ValidOffsetToken, ', '));
-            assert(iscellstr(val), msg); %#ok<ISCLSTR>
-            assert(all(ismember(val, obj.ValidOffsetToken)), msg);
-            obj.OFFT = val;
-        end
-        function val = get.EID(obj)
-            val = obj.ID;
-        end
     end
     
     methods % construction
@@ -69,14 +19,29 @@ classdef Beam < bulk.BulkData
             %Initialise the bulk data sets
             addBulkDataSet(obj, 'CBAR', ...
                 'BulkProps'  , {'EID', 'PID', 'GA_GB', 'X', 'OFFT'}, ...
-                'BulkTypes'  , {'i'  , 'i'  , 'i'    , 'r', 'c'}   , ...
-                'BulkDefault', {''   , ''   , ''     , '' , 'GGG'} , ...
+                'PropTypes'  , {'i'  , 'i'  , 'i'    , 'r', 'c'}   , ...
+                'PropDefault', {''   , ''   , ''     , '' , 'GGG'} , ...
                 'PropMask'   , {'GA_GB', 2, 'X', 3}, ...
-                'Connections', {'GA_GB', 'bulk.Node', 'Nodes'});
+                'Connections', {'GA_GB', 'bulk.Node', 'Nodes'}     , ...
+                'AttrList'   , {'GA_GB', {'nrows', 2}, 'X', {'nrows', 3}}, ...
+                'SetMethod'  , {'OFFT', @validateOFFT});
             
             varargin = parse(obj, varargin{:});
             preallocate(obj);
             
+        end
+    end
+    
+    methods % validation
+        function validateOFFT(obj, val, prpName, varargin)
+            
+            msg = sprintf(['Expected ''%s'' to be a cell array ', ...
+                'of string with each element being one of the following '  , ...
+                'tokens:\n\n\t- %s\n\n'], prpName, strjoin(obj.ValidOffsetToken, ', '));
+            assert(iscellstr(val), msg); %#ok<ISCLSTR>
+            assert(all(ismember(val, obj.ValidOffsetToken)), msg);
+            obj.OFFT = val;
+
         end
     end
     
