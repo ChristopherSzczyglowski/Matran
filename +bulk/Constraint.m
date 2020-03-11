@@ -6,43 +6,18 @@ classdef Constraint < bulk.BulkData
     %
     % Valid Bulk Data Types:
     %   - 'SPC1'
-    
-    properties
-        %SPC ID number
-        SID
-        %Degrees of freedom being constrained
-        C
-        %ID numbers of Nodes
-        G
-    end
-    
-    methods % set / get
-        function set.SID(obj, val)
-            validateID(obj, val, 'SID');
-            obj.ID = val;
-        end
-        function set.C(obj, val)
-           validateDOF(obj, val, 'C');
-           obj.C = val;
-        end
-        function set.G(obj, val)
-            obj.G = val;
-        end
-        function val = get.SID(obj)
-            val = obj.ID;
-        end
-    end
-    
+            
     methods % construction
         function obj = Constraint(varargin)
                     
             %Initialise the bulk data sets
             addBulkDataSet(obj, 'SPC1', ...
                 'BulkProps'  , {'SID', 'C', 'G'}, ...
-                'BulkTypes'  , {'i'  , 'c', 'i'}, ...
-                'BulkDefault', {''   , '' ,''}  , ...
-                'PropList'   , {'G'}, ...
-                'Connections', {'G', 'bulk.Node', 'Nodes'});
+                'PropTypes'  , {'i'  , 'c', 'i'}, ...
+                'PropDefault', {''   , '' ,''}  , ...
+                'ListProp'   , {'G'}, ...
+                'Connections', {'G', 'bulk.Node', 'Nodes'}, ...
+                'SetMethod'  , {'C', @validateDOF});
             
             varargin = parse(obj, varargin{:});
             preallocate(obj);
