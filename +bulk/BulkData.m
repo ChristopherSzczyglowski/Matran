@@ -3,8 +3,6 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
     %
     % TODO: Add custom display so only properties of the 'BulkType' are
     % displayed.
-    % TODO: Change bulk properties to dynamic props for a very lightweight
-    % implementation.
     % TODO: Update the method for extracting list bulk data
     
     %Visualisation
@@ -18,10 +16,6 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
     properties (Hidden = true)
         %Everything has an ID number
         ID
-        %Initial counter for the FE object ID numbers. No object will be
-        %assigned an ID number lower than this when using the method
-        %'assignIDnumbers' in the 'awi.fe.FEModel' object.
-        ID0 = 1000;
     end
     
     %FE data
@@ -29,7 +23,10 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
         %Name of the MSC.Nastran bulk data entry
         CardName
         %Properties related to the bulk data entry
-        BulkDataProps = struct('BulkName', {}, 'BulkProps', {}, 'PropTypes', {}, 'PropDefault', {}, 'PropMask', {}, 'Connections', {});
+        BulkDataProps = struct( ...
+            'BulkName'   , {}, 'BulkProps', {}, 'PropTypes', {}, ...
+            'PropDefault', {}, 'PropMask' , {}, 'ListProp' , {}, ...
+            'Connections', {}, 'AttrList' , {}, 'SetMethod', {});
         %Number of bulk data entries in this object
         NumBulk
     end
@@ -44,6 +41,19 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
         CurrentBulkDataTypes
         %Current list of bulk data default values
         CurrentBulkDataDefaults
+    end
+    
+    %Dynamic props
+    properties (Hidden = true, SetAccess = private)
+        %Name of the dynamic property being set by the
+        %'PreSet'/'Set'/'PostSet' listener chain
+        DynPropBeingSet
+        %Structure containing a record of the most recent pre-set values
+        %for the object dynamic properties.
+        PreSetVal = struct();
+        %Logical flag for indicating whether the current dynamic property
+        %has failed a validation case.
+        DynPropDirty = false;
     end
     
     methods % set / get
@@ -97,20 +107,22 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
     methods (Sealed, Access = protected) % handling bulk data sets
         function addBulkDataSet(obj, bulkName, varargin)
             %addBulkDataSet Defines a new set of bulk data entries.
-            
+                      
             p = inputParser;
             addRequired(p , 'bulkName'   , @ischar);
             addParameter(p, 'BulkProps'  , [], @iscellstr);
-            addParameter(p, 'BulkTypes'  , [], @iscellstr);
-            addParameter(p, 'BulkDefault', [], @iscell);
+            addParameter(p, 'PropTypes'  , [], @iscellstr);
+            addParameter(p, 'PropDefault', [], @iscell);
             addParameter(p, 'PropMask'   , [], @iscell);
-            addParameter(p, 'PropList'   , [], @iscellstr);
+            addParameter(p, 'ListProp'   , [], @iscellstr);
             addParameter(p, 'Connections', [], @iscell);
+            addParameter(p, 'AttrList'   , [], @iscell);
+            addParameter(p, 'SetMethod'  , [], @iscell);
             parse(p, bulkName, varargin{:});
             
             prpNames   = p.Results.BulkProps;
-            prpTypes   = p.Results.BulkTypes;
-            prpDefault = p.Results.BulkDefault;
+            prpTypes   = p.Results.PropTypes;
+            prpDefault = p.Results.PropDefault;
             if isempty(prpNames) || isempty(prpTypes) || isempty(prpDefault)
                 error(['Must specify the ''BulkProps'', ''BulkType'' and ', ...
                     '''BulkDefault'' in order to add a complete ', ...
@@ -118,43 +130,50 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             end
             n = [numel(prpNames), numel(prpTypes), numel(prpDefault)];
             assert(all(diff(n) == 0), ['The number of ''BulkProps'', ', ...
-                '''PropTypes'' and ''PropDefault'' must be the same.']);
-            propMask = p.Results.PropMask;
-            propList = p.Results.PropList;
+                '''PropTypes'' and ''PropDefault'' must be the same.']);                   
             
-            %Parse
+            %Check for valid variable names
+            idx = cellfun(@isvarname, prpNames);
+            assert(all(idx), ['All properties defined in ''BulkProps'' must ', ...
+                'be valid variable names. The following property names did ' , ...
+                'not pass this assertion:\n\n\t%s\n'], strjoin(prpNames(idx), ', '));            
+            
+            %Deal with masked properties
+            propMask = p.Results.PropMask;               
             if ~isempty(propMask)
                 assert(rem(numel(propMask), 2) == 0, ['Expected the ', ...
-                    '''BulkMask'' to be a cell array of name/value pairs.']);
+                    '''PropMask'' to be a cell array of name/value pairs.']);
                 nam = propMask(1 : 2 : end);
                 val = propMask(2 : 2 : end);
-                idx = cellfun(@(x) isprop(obj, x), nam);
-                assert(all(idx), ['All properties referred to in ' , ...
-                    '''PropMask'' must be a valid property of the ', ...
-                    '%s object. The following propertes were not found', ...
-                    '\n\n\t%s\n'], class(obj), strjoin(prpNames(~idx), ', '));
+                idx = cellfun(@isvarname, nam);
+                assert(all(idx), ['All properties defined in ''BulkProps'' must ', ...
+                    'be valid variable names. The following property names did ' , ...
+                    'not pass this assertion:\n\n\t%s\n'], strjoin(nam(idx), ', '));
+                idx = ismember(nam, prpNames);
+                assert(all(idx), ['All masked property names ', ...
+                    'must match one (and only one) of the entries in ''BulkProps''. ', ...
+                    'The following masked properties were not found in ''BulkProps'':', ...
+                    '\n\n\t%s\n'], strjoin(nam(idx), ', '));                
                 arrayfun(@(ii) validateattributes(val{ii}, {'numeric'}, ...
                     {'scalar', 'integer', 'positive'}, class(obj)), 1 : numel(val));
             end
-            idx = cellfun(@(x) isprop(obj, x), prpNames);
-            assert(all(idx), ['All ''BulkProps'' must be a valid property ', ...
-                'of the %s object. The following propertes were not ', ...
-                'found\n\n\t%s\n'], class(obj), strjoin(prpNames(~idx), ', '));
             
+            %Deal with list properties
+            propList = p.Results.ListProp;
             if ~isempty(propList)
-                idx = cellfun(@(x) isprop(obj, x), propList);
-                assert(all(idx), ['All properties referred to in ' , ...
-                    '''PropList'' must be a valid property of the ', ...
-                    '%s object. The following propertes were not found', ...
-                    '\n\n\t%s\n'], class(obj), strjoin(propList(~idx), ', '));
+                idx = ismember(propList, prpNames);
+                assert(all(idx), ['All properties referred to in '      , ...
+                    '''PropList'' must match one (and only one) of the ', ...
+                    'entries in ''BulkProps''. The following list '     , ...
+                    'properties were not found in ''BulkProps'':\n\n\t%s\n'], ...
+                    strjoin(propList(idx), ', '));
             end
             
             %Deal with 'Connections'
             con = p.Results.Connections;
             if isempty(con)
                 Connections = [];
-            else
-                                
+            else                                
                 assert(mod(numel(con), 3) == 0, ['Expected the ''Connections'' ' , ...
                     'parameter to be a cell-array with number of elements equal ', ...
                     'to a multiple of 3.']);
@@ -166,10 +185,54 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
                 cellfun(@(x) addDynamicProp(obj, x), dynProps);
                 cellfun(@(x) addDynamicProp(obj, [x, 'Index']), dynProps);
                 
-                Connections = struct('Prop', bulkProp, 'Type', bulkType, 'DynProp', dynProps);
-                
+                Connections = struct('Prop', bulkProp, 'Type', bulkType, 'DynProp', dynProps);                
             end
             
+            %Deal with attribute list
+            attrList = p.Results.AttrList;
+            if ~isempty(attrList)
+                assert(rem(numel(attrList), 2) == 0, ['Expected the ', ...
+                    '''AttrList'' to be a cell array of name/value pairs.']);
+                nam = attrList(1 : 2 : end);
+                val = attrList(2 : 2 : end);
+                idx = cellfun(@isvarname, nam);
+                assert(all(idx), ['All properties defined in ''AttrList'' must ', ...
+                    'be valid variable names. The following property names did ' , ...
+                    'not pass this assertion:\n\n\t%s\n'], strjoin(nam(idx), ', '));
+                idx = ismember(nam, prpNames);
+                assert(all(idx), ['All attribute property names ', ...
+                    'must match one (and only one) of the entries in ''BulkProps''. ', ...
+                    'The following attribute properties were not found in ''BulkProps'':', ...
+                    '\n\n\t%s\n'], strjoin(nam(idx), ', '));
+                assert(all(cellfun(@iscell, val)), ['Each entry in '      , ...
+                    'the ''AttrList'' must be a cell-array of attribute ' , ...
+                    'name/values. See ''help validateattributes'' for a ' , ...
+                    'list of valid attributes.']);
+            end
+            
+            %Deal with bespoke set methods
+            setMethod = p.Results.SetMethod;
+            if ~isempty(setMethod)
+                assert(rem(numel(setMethod), 2) == 0, ['Expected the ', ...
+                    '''AttrList'' to be a cell array of name/value pairs.']);
+                nam = setMethod(1 : 2 : end);
+                val = setMethod(2 : 2 : end);
+                idx = cellfun(@isvarname, nam);
+                assert(all(idx), ['All properties defined in ''SetMethod'' must ', ...
+                    'be valid variable names. The following property names did ' , ...
+                    'not pass this assertion:\n\n\t%s\n'], strjoin(nam(idx), ', '));
+                idx = ismember(nam, prpNames);
+                assert(all(idx), ['All set method property names ', ...
+                    'must match one (and only one) of the entries in ''BulkProps''. ', ...
+                    'The following set method properties were not found in ''BulkProps'':', ...
+                    '\n\n\t%s\n'], strjoin(nam(idx), ', '));
+                idx = cellfun(@(x) isa(x, 'function_handle'), val);
+                assert(all(idx), ['All set methods should be function ', ...
+                    'handles. The following set methods did not meet this ', ...
+                    'criteria:\n\n\t%s\n'], strjoin(nam(idx)));
+            end
+            
+            %Stash a record in the object
             BDS = struct( ...
                 'BulkName'   , bulkName    , ...
                 'BulkProps'  , {prpNames}  , ....
@@ -177,8 +240,9 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
                 'PropDefault', {prpDefault}, ...
                 'PropMask'   , {propMask}  , ...
                 'PropList'   , {propList}  , ...
-                'Connections', Connections);
-            
+                'Connections', Connections , ...
+                'AttrList'   , {attrList}  , ...
+                'SetMethod'  , {setMethod});            
             if isempty(obj.BulkDataProps)
                 obj.BulkDataProps = BDS;
             else
@@ -248,11 +312,41 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
                 strjoin(vn, ', '), class(obj));
             BulkDataInfo = obj.BulkDataProps(idx);
             
+            %Add dynamic properties. We do this at this point so that only
+            %the properties for the desired 'BulkType' are generated.
+            prpNames = BulkDataInfo.BulkProps;
+            assert(all(cellfun(@isvarname, prpNames)), ['All ''BulkProps'' ', ...
+                'must be a valid variable name. i.e. Must satisfy the ', ...
+                'function @isvarname']);
+            cellfun(@(x) addDynamicProp(obj, x), prpNames);
+            dProp = getDynamicProp(obj, prpNames);
+            
+            %Hack the set methods for the dynamic properties using
+            %combination of 'PreSet' & 'PostSet' listeners and a custom set
+            %method. This allows us to control the validation of the
+            %dynamic properties and ensure the object remains valid.
+            %
+            % Also, add a get method for the first property as it is a
+            % reference to the ID property of the superclass.
+            if ~isempty(dProp)
+                [dProp.SetObservable] = deal(true);
+                [dProp.SetMethod]     = deal(@cbStashDynPropVal);
+                dProp(1).GetMethod    = @cbGetBulkDataID;
+                addlistener(obj, dProp, 'PreSet' , @cbStashDynPropName);
+                addlistener(obj, dProp, 'PostSet', @cbValidateDynProp);
+            end
+            
             nb = obj.NumBulk;
             
             %Real or integer ('r' or 'i') are stored as vectors
-            idxNum  = ismember(BulkDataInfo.PropTypes, {'r', 'i'});
-            set(obj, BulkDataInfo.BulkProps(idxNum), repmat({zeros(1, nb)}, [1, nnz(idxNum)]));
+            idxNum = ismember(BulkDataInfo.PropTypes, {'r', 'i'});
+            numVal = repmat({zeros(1, nb)}, [1, nnz(idxNum)]);
+            %   - Repeat any masked properties
+            for i = 1 :  numel(BulkDataInfo.PropMask) / 2
+                idx = ismember(prpNames, BulkDataInfo.PropMask((2 * i) - 1));
+                numVal{idx} = repmat(numVal{idx}, [BulkDataInfo.PropMask{2 * i}, 1]);
+            end
+            set(obj, BulkDataInfo.BulkProps(idxNum), numVal);
             
             %Char data ('c') are stored as cell-strings
             idxChar = ismember(BulkDataInfo.PropTypes, {'c'});
@@ -460,16 +554,16 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             
         end
     end
-    
+        
     methods (Sealed) % validation
-        function validateID(obj, val, prpName)              %validateID
+        function validateID(obj, val, prpName, varargin)    %validateID
             if isempty(val)
                 return
             end
             validateattributes(val, {'numeric'}, {'integer', '2d', ...
                 'real', 'nonnan', 'nonnegative'}, class(obj), prpName);
         end
-        function validateDOF(obj, val, prpName)             %validateDOF
+        function validateDOF(obj, val, prpName, varargin)   %validateDOF
             %validateDOF Checks that 'val' is a valid Degree-of-Freedom
             %(DOF) entry.
             %
@@ -511,7 +605,7 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             
             %TODO - Have any numbers been repeated twice?
             
-            function throwME_SPC(obj, val, paramName)
+            function throwME_SPC(obj, ~, paramName)
                 %throwME_SPC Throws an MException object containing the
                 %error message for a badly formatted SPC entry.
                 
@@ -549,16 +643,16 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             validateattributes(val, {'numeric'}, {'2d', 'nonempty', ...
                 'finite', 'real', 'nonnan'}, class(obj), prpName);
         end
-        function validateLabel(obj, val, prpName)           %validateLabel
+        function validateLabel(obj, val, prpName, varargin) %validateLabel
             %validateLabel Checks that the value of the label with property
             %name 'prpName' matches the expected format.
             %
             % Each label must be a character row vector of less than 8
             % characters.
-            validateattributes(val, {'char'}, {'row', 'nonempty'}, ...
-                class(obj), prpName);
-            assert(numel(val) < 9, sprintf(['The label ''%s'' must ', ...
-                'have less than 9 characters'], prpName));
+            assert(iscellstr(val), ['The property ''%s'' must be a ', ...
+                'cell-array of strings'], prpName); %#ok<*ISCLSTR>
+            assert(all(cellfun(@numel, val) < 9), ['Each element of the ', ...
+                'property ''%s'' must be 8 characters or less.'], prpName);
         end
     end
     
@@ -585,3 +679,97 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
     
 end
 
+%Dynamic property callbacks
+function cbStashDynPropName(src, evt)
+%cbStashDynPropName PreSet callback for dynamic properties related to the
+%current bulk data set.
+%
+% Stashes a copy of the dynamic property name that is currently being
+% activated by the 'PreSet' property listener.
+
+%Make sure we keep a record of the current dynamic property being set
+evt.AffectedObject.DynPropBeingSet = src.Name;
+
+end
+function cbStashDynPropVal(obj, val)
+%cbStashDynPropVal Set method for the dynamic properties related to the
+%current bulk data set.
+%
+% Stashes a copy of the dynamic property value whilst it is being set.
+% This allows us to capture the value and restore it later if it fails the
+% validation case.
+
+%Which property?
+nam = obj.DynPropBeingSet;
+
+%Stash the old value, but only if the object is not dirty!
+if ~obj.DynPropDirty
+    obj.PreSetVal.(nam) = obj.(nam);
+end
+
+%Allow the new value to pass, will be checked by 'PostSet' listener
+%
+% If it is the first property in the bulk data entry then it is a mask for
+% the 'ID' property.
+if strcmp(nam, obj.CurrentBulkDataProps{1})
+    obj.ID = val;
+else
+    obj.(nam) = val;
+end
+
+end
+function cbValidateDynProp(src, evt)
+%cbValidateDynProp PostSet listener for dynamic properties related to the
+%current bulk data set.
+%
+% Executes the validation function for the dynamic property value and
+% captures any errors. If the property fails the validation case then the
+% pre-set value is restored.
+
+map = { ...
+    'i', @validateID   ; ...
+    'r', @validateReal ; ...
+    'c', @validateLabel};
+    
+BulkObj = evt.AffectedObject;
+prpName = src.Name;
+val     = BulkObj.(prpName);
+
+%Which validation method to use?
+idx = ismember(BulkObj.CurrentBulkDataProps, prpName);
+tok = BulkObj.CurrentBulkDataTypes{idx};
+func = map{ismember(map(:, 1), tok), 2};
+
+%Additional attributes?
+attr = BulkObj.CurrentBulkDataStruct.AttrList;
+idx  = ismember(attr(1 : 2 : end), prpName);
+if any(idx)
+    extra_attr = attr{find(idx) * 2};
+else
+    extra_attr = {};
+end
+
+%Check if this property has a bespoke method?
+setMethod = BulkObj.CurrentBulkDataStruct.SetMethod;
+idx = ismember(setMethod(1 : 2 : end), prpName);
+if any(idx)
+    func = setMethod{find(idx) * 2};
+end
+
+%Run it
+try
+    func(BulkObj, val, prpName, extra_attr);
+catch ME
+    %If it fails then restore the previous value...
+    %...BUT we need to mark the 
+    BulkObj.DynPropDirty = true;
+    BulkObj.(prpName) = BulkObj.PreSetVal.(prpName);
+    BulkObj.DynPropDirty = false;
+    throwAsCaller(ME);
+end
+
+end
+function val = cbGetBulkDataID(obj)
+%cbGetBulkDataID Retrieves the value from the underlying ID property.
+val = obj.ID;
+end
