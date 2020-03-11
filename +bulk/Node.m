@@ -1,28 +1,4 @@
 classdef Node < bulk.BulkData
-    %Node Describes a point in 3D-space for use in a finite element model.
-    %
-    % The definition of the 'Node' object matches that of the GRID bulk
-    % data type from MSC.Nastran.
-    %
-    % Valid Bulk Data Types:
-    %   - 'GRID'
-    %   - 'SPOINT'
-    
-    %Primary Properties
-    properties
-        %Identification number
-        GID
-        %Definition coordinate system identification number
-        CP = 0;
-        %Coordinates of the node in the coordinate system defined by CP
-        X = [0 ; 0 ; 0];
-        %Output coordinate system identification number
-        CD = 0;
-        %Permanent single point constraints
-        PS
-        %Super element ID numbers
-        SEID
-    end
     
     %Store results data
     properties (Hidden = true)
@@ -36,74 +12,21 @@ classdef Node < bulk.BulkData
         DrawCoords
     end
     
-    methods % set / get
-        function set.GID(obj, val)               %set.GID
-            %set.GID Set method for the property 'GID'.
-            %
-            % Passes the value straight to the inherited 'ID' property
-            % which will validate and store the ID number.
-            obj.ID = val;
-        end
-        function set.CP(obj, val)                %set.CP
-            validateID(obj, val, 'CP')
-            obj.CP = val;
-        end
-        function set.X(obj, val)                 %set.X
-            if isrow(val)
-                val = repmat(val, [3, 1]);
-            end
-            validateattributes(val, {'numeric'}, {'2d', 'nrows', 3, ...
-                'finite', 'real', 'nonnan'}, class(obj), 'X');
-            obj.X = val;
-        end
-        function set.CD(obj, val)                %set.CD
-            validateID(obj, val, 'CD')
-            obj.CD = val;
-        end
-        function set.PS(obj, val)                %set.PS
-            validateDOF(obj, val, 'PS');
-            obj.PS = val;
-        end
-        function set.SEID(obj, val)              %set.SEID
-           validateID(obj, val, 'SEID');
-           obj.SEID = val;
-        end
-        function set.GlobalTranslation(obj, val) %set.GlobalTranslation
-            validateattributes(val, {'numeric'}, {'column', 'numel', 3, ...
-                'finite', 'real', 'nonnan'}, class(obj), 'GlobalTranslation');
-            obj.GlobalTranslation = val;
-        end
-        function val = get.GID(obj)              %get.GID
-            val = obj.ID;
-        end
-        function val = get.DrawCoords(obj)       %get.DrawCoords
-            %get.DrawCoords Get method for the property 'DrawCoords'.
-            
-            val = [];
-            
-            if isempty(obj.X)
-                return
-            end
-            
-            %Pass it on
-            val = obj.getDrawCoords(obj);
-            
-        end
-    end
-    
     methods % construction
         function obj = Node(varargin)
-                        
+            
             %Initialise the bulk data sets
             addBulkDataSet(obj, 'GRID', ...
                 'BulkProps'  , {'GID', 'CP', 'X', 'CD', 'PS', 'SEID'}, ...
-                'BulkTypes'  , {'i'  , 'i' , 'r', 'i' , 'c' , 'i'}   , ...
-                'BulkDefault', {''   , 0   , 0  , 0   , ''  , 0 }    , ...
-                'PropMask'   , {'X', 3});
+                'PropTypes'  , {'i'  , 'i' , 'r', 'i' , 'c' , 'i'}   , ...
+                'PropDefault', {''   , 0   , 0  , 0   , ''  , 0 }    , ...
+                'PropMask'   , {'X', 3}, ...
+                'AttrList'   , {'X', {'nrows', 3}}, ...
+                'SetMethod'  , {'PS', @validateDOF});
             addBulkDataSet(obj, 'SPOINT', ...
                 'BulkProps'  , {'ID'}, ...
-                'BulkType'   , {'i'} , ...
-                'BulkDefault', {''});
+                'PropType'   , {'i'} , ...
+                'PropDefault', {''});
             
             varargin = parse(obj, varargin{:});
             preallocate(obj);
@@ -180,4 +103,3 @@ classdef Node < bulk.BulkData
     end
     
 end
-
