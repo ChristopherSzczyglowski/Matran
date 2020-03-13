@@ -5,6 +5,9 @@ classdef Dynamicable < dynamicprops
     %	- To add a dynamic property in a subclass method:
     %       >> prpName = 'myDynamicProp';
     %       >> addDynamicProp(obj, prpName)
+    %   - To retrieve a dynamic property:
+    %       >> prpName = 'myDynamicProp';
+    %       >> DynProp = getDynamicProp(obj, prpName);
     %
     % Detailed Description:
     %	- When a dynamic property is added the handle of the
