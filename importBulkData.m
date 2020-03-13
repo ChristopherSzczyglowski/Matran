@@ -477,6 +477,12 @@ end
 lineData  = data{startIndex};
 cardIndex = startIndex;
 
+%Remove comments found partway through a line
+commentInd = strfind(lineData, '$');
+if ~isempty(commentInd)
+    lineData = lineData(1 : commentInd - 1);
+end
+
 %Check for data in column 10
 [cardData{1}, endCol] = i_removeEndColumn(lineData);
 
