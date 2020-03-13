@@ -277,11 +277,9 @@ if isempty(ind) %Escape route
 end
 
 for iFile = 1 : numel(ind) %Extract path to the included file
-    
-    error('Check code still runs correctly');
-    
+        
     %Extract all data related to the "INCLUDE" card
-    [cardData, IncludeIndex{iFile}] = mni.Entity.getCardData(BulkData, ind(iFile));
+    [cardData, IncludeIndex{iFile}] = getCardData(BulkData, ind(iFile));
     
     %Remove blanks and combine into one string
     filename = strtrim(cardData);
