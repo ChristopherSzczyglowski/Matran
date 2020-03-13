@@ -29,7 +29,7 @@ function FEModel = importBulkData(bulkFilename)
 % <end_of_pre_formatted_H1>
 
 FEModel  = [];
-logfcn   = @(s) fprintf('%s\n', s);
+logfcn   = @logger;
 validExt = {'.dat', '.bdf'};
 
 %Prompt user if no file is provided
@@ -376,7 +376,7 @@ for iCard = 1 : numel(cardNames)
         
         %Tell the user
         logfcn(sprintf('%-10s %-8s (%8i)', 'Extracting', ...
-            cn, nCard));
+            cn, nCard), 0);
         
         %Initialise the object
         fcn     = str2func(str);
@@ -387,15 +387,24 @@ for iCard = 1 : numel(cardNames)
 %         set(card(isWF) , 'ColWidth', 16);
 %         set(card(~isWF), 'ColWidth', 8);
         
-        %Loop through each instance of 'card' in 'BulkData'
-        for iCard = 1 : nCard %extract properties
-            %Extract raw text data for this card
-            [cardData, ~] = getCardData(BulkData, ind(iCard));
-            %Extract values from raw text data and assign to
-            %the object
-            extractCardData(BulkObj, cardData, iCard);
+        %Set up character tokens for denoting progress
+        nChar    = 50;  %total number of characters to denote 100%
+        progChar = repmat({''}, [1, nCard]);
+        incr     = ceil(nCard / nChar);
+        if incr ~= 1
+            index           = 1 : incr : nCard;
+            progChar(index) = {'#'};          
         end
         
+        logfcn('       ', 0);
+        %Extract raw text data for this card and assign to the object
+        for iCard = 1 : nCard %#ok<FXSET> %extract properties
+            [cardData, ~] = getCardData(BulkData, ind(iCard));
+            extractCardData(BulkObj, cardData, iCard);
+            logfcn(progChar{iCard}, 0);
+        end
+        logfcn('');
+
         %Add object to the model        
         addBulk(FEM, BulkObj);
         
@@ -571,6 +580,27 @@ else
 end
 
 end
+
+%Logging the progress
+function logger(str, bNewLine)
+%logger Presents the import display to the user.
+
+if nargin < 2
+    bNewLine = true;
+end
+
+if bNewLine
+    esc = '\n';
+else
+    esc = '';
+end
+
+fprintf(['%s', esc], str);
+
+end
+
+% Defining the mask (TODO - Move this out of here. Make it generate
+% automatically as part of the testing process)
 
 function BulkDataMask = defineBulkMask()
 %defineBulkMask Defines the cross-references between bulk data types and
