@@ -86,7 +86,7 @@ end
 rawFileData = readCharDataFromFile(bulkFilename, logfcn);
 
 %Split into Executive Control, Case Control and Bulk Data
-[~, CC, BD] = splitInputFile(rawFileData, logfcn);
+[~, CC, BD, unresolvedBulk] = splitInputFile(rawFileData, logfcn);
 
 %Extract "NASTRAN SYSTEM" commands from Executive Control
 
@@ -147,7 +147,7 @@ end
 
 %Partitioning the Nastran input file
 
-function [execControl, caseControl, bulkData] = splitInputFile(data, logfcn)
+function [execControl, caseControl, bulkData, unresolvedBulk] = splitInputFile(data, logfcn)
 %splitInputFile Splits the cell-string data in 'data' into
 %three segments: 'Executive Control', 'Case Control' & 'Bulk
 %Data'.
@@ -173,7 +173,7 @@ indBD = find(idx_BD == true);
 if ~any(idx_BD) %If not found, assume all is bulk
     execControl = {};
     caseControl = {};
-    bulkData    = data;
+    [bulkData, unresolvedBulk] = i_parseBulkData(data);
     logfcn(['Did not find tokens ''CEND'' or ''BEGIN BULK''. ', ...
         'Assuming all file contents are bulk data.']);
     return
@@ -187,8 +187,24 @@ bulkData    = data(indBD + 1 : end);
 %Remove "ENDDATA" from the BulkData cell array
 bulkData(contains(bulkData, 'ENDDATA')) = [];
 
+[bulkData, unresolvedBulk] = i_parseBulkData(bulkData);
+
 logfcn(['Input data split into ''Executive Control'', ', ...
     '''Case Control'' and ''Bulk Data'' sections.']);
+
+    function [bulkData, unresolvedBulk] = i_parseBulkData(bulkData)
+        %i_parseBulkData Stashes any line that have less than 8 characters
+        %in the variable 'unresolvedBulk' and retains only the lines that
+        %have 8 characters or more.
+        %
+        %
+        % N.B. Any line that has less than 8 characters is ikely to be a
+        % system command.
+        idx = (cellfun(@numel, bulkData) < 8);
+        unresolvedBulk = bulkData(idx);
+        bulkData       = bulkData(~idx);
+        
+    end
 
 end
 
