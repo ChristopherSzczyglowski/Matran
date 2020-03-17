@@ -21,6 +21,43 @@ classdef FEModel < matlab.mixin.SetGet & mixin.Dynamicable
             obj.(cn) = BulkObj;
             
         end
+        function combineBulkData(obj)
+            %combineBulkData Combines the bulk data from an array of
+            %'bulk.FEModel' objects into a single model.
+            
+            if numel(obj) == 1
+                return
+            end
+            
+            %Get names of dynamic properties
+            DynProps = horzcat(obj.DynamicProps);
+            if isempty(DynProps)
+                return
+            end
+            bulkNames = unique({DynProps.Name});
+            
+            %Combine each set of bulk data
+            for iB = 1 : numel(bulkNames)
+                %Get the bulk data for this type from each model
+                nam      = bulkNames{iB};
+                data     = get(obj(isprop(obj, nam)), {nam});
+                BulkObj  = horzcat(data{:});
+                prpNames = BulkObj(1).CurrentBulkDataProps;   
+                %Get the bulk data from each FEModel and combine
+                prpVal   = get(BulkObj, prpNames);
+                prpVal   = arrayfun(@(ii) horzcat(prpVal{:, ii}), ...
+                    1 : numel(prpNames), 'Unif', false);
+                %If the main FEModel does not have this bulk data object
+                %then make a new instance of the model
+                if ~isprop(obj(1), bulkNames{iB})
+                    fcn    = str2func(class(BulkObj));
+                    NewObj = fcn(nam, numel(prpVal{1}));
+                    addBulk(obj(1), NewObj);
+                end
+                set(obj(1).(nam), prpNames, prpVal);
+            end
+            
+        end
         function makeIndices(obj)
            %makeIndices Builds the connections between different bulk data
            %objects in the model.   
