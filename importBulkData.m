@@ -131,7 +131,6 @@ logfcn(sprintf('Beginning file read of file ''%s'' ...', filename));
 %Import all the data as a string
 %   - Import literal text (including whitespace)
 %   - Remove comments (any line beginning with '$')
-%   - TODO : Need to be able to parse lines that have comments part way
 rawFileData = textscan(fileID, '%s', ...
     'Delimiter'    , '\n' , ...
     'CommentStyle' , '$'  , ...
@@ -342,8 +341,7 @@ col1 = cellfun(@(x) x(1 : 8), BulkData, 'Unif', false);
 idxCont   = cellfun(@(x) iscont(x), col1);
 col1      = strtrim(col1);
 idx       = or(idxCont, contains(col1, '*')); %Got to account for card names with large-field format
-%             cardNames = unique(strtrim(col1(~idx)), 'stable'); %TODO - Is this quicker without 'stable'?
-cardNames = unique(col1(~idx), 'stable');
+cardNames = unique(col1(~idx), 'stable');     %Extract the data in the order it appears
 
 %BUT, if the file has been written in free-field
 %(comma-seperated) format the 'cardNames' may not be valid so
@@ -353,7 +351,7 @@ ind = strfind(cardNames , ','); %TODO : Investigate what is quicker. Could do ce
 cardNames(idx) = arrayfun(@(i) cardNames{i}(1 : ind{i} - 1), find(idx), 'Unif', false);
 
 %Now get the actual unique names
-cardNames = unique(cardNames, 'stable'); %TODO - Is this quicker without 'stable'?
+cardNames = unique(cardNames, 'stable');
 
 %Loop through cards - create objects & populate properties
 for iCard = 1 : numel(cardNames)
@@ -437,12 +435,9 @@ for iCard = 1 : numel(cardNames)
         
     else
         
-        %Tell the user - TODO : Decide whether we need to tell
-        %the user about the number of cards that are skipped...
+        %Make a note of it
         logfcn(sprintf('%-10s %-8s (%8i)', 'Skipped', ...
             cn, nCard));
-        
-        %Make a note of it
         UnknownBulk{end + 1} = sprintf( ...
             '%8s - %6i entry/entries', cn, nCard); 
         
