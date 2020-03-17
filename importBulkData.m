@@ -658,6 +658,7 @@ BulkDataMask.MAT1   = 'bulk.Material';
 BulkDataMask.SPC1   = 'bulk.Constraint';
 BulkDataMask.CAERO1 = 'bulk.AeroPanel';
 BulkDataMask.CQUAD4 = 'bulk.Panel';
+BulkDataMask.CTRIA3 = 'bulk.Panel';
 
 end
 
