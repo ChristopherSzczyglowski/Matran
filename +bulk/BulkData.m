@@ -42,6 +42,10 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
         %Current list of bulk data default values
         CurrentBulkDataDefaults
     end
+    properties (Dependent, Hidden = true)
+       %Current list of bulk data formats excluding 'b entries
+        CurrentBulkDataTypes_ 
+    end
     
     %Dynamic props
     properties (Hidden = true, SetAccess = private)
@@ -102,6 +106,13 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             idx = ismember(obj.ValidBulkNames, obj.CardName);
             val = obj.BulkDataProps(idx).PropDefault;
         end
+        function val = get.CurrentBulkDataTypes_(obj)    %get.CurrentBulkDataTypes_
+            val = obj.CurrentBulkDataTypes;
+            if isempty(val)
+                return
+            end
+            val = val(~ismember(val, 'b'));
+        end
     end
         
     methods (Sealed, Access = protected) % handling bulk data sets
@@ -128,7 +139,8 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
                     '''BulkDefault'' in order to add a complete ', ...
                     '''BulkDataProp'' entry.']);
             end
-            n = [numel(prpNames), numel(prpTypes), numel(prpDefault)];
+            prpTypes_ = prpTypes(~ismember(prpTypes, 'b'));
+            n = [numel(prpNames), numel(prpTypes_), numel(prpDefault)];
             assert(all(diff(n) == 0), ['The number of ''BulkProps'', ', ...
                 '''PropTypes'' and ''PropDefault'' must be the same.']);                   
             
@@ -338,8 +350,12 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             
             nb = obj.NumBulk;
             
+            %Grab the prop types but strip blank ('b') entries so we can
+            %index the other propery attributes
+            prpTypes = obj.CurrentBulkDataTypes_;
+            
             %Real or integer ('r' or 'i') are stored as vectors
-            idxNum = ismember(BulkDataInfo.PropTypes, {'r', 'i'});
+            idxNum = ismember(prpTypes, {'r', 'i'});
             numVal = repmat({zeros(1, nb)}, [1, nnz(idxNum)]);
             %   - Repeat any masked properties
             for i = 1 :  numel(BulkDataInfo.PropMask) / 2
@@ -349,7 +365,7 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             set(obj, BulkDataInfo.BulkProps(idxNum), numVal);
             
             %Char data ('c') are stored as cell-strings
-            idxChar = ismember(BulkDataInfo.PropTypes, {'c'});
+            idxChar = ismember(prpTypes, {'c'});
             charVal = cellfun(@(x) repmat({x}, [1, nb]), BulkDataInfo.PropDefault(idxChar), 'Unif', false);
             set(obj, BulkDataInfo.BulkProps(idxChar), charVal);
             
@@ -507,6 +523,11 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             %   - avoids lots of if/elseif statements
             nProp    = numel(propData);
             propData = [propData ; repmat({''}, [numel(dataFormat) - nProp, 1])];
+            
+            %Remove any blank elements
+            idx = dataFormat == 'b';
+            propData(idx)   = [];
+            dataFormat(idx) = '';
             
             %Check for scientific notation without 'E'
             idx = and(contains(propData, '+'), ~contains(propData, 'E'));
@@ -737,7 +758,7 @@ val     = BulkObj.(prpName);
 
 %Which validation method to use?
 idx = ismember(BulkObj.CurrentBulkDataProps, prpName);
-tok = BulkObj.CurrentBulkDataTypes{idx};
+tok = BulkObj.CurrentBulkDataTypes_{idx};
 func = map{ismember(map(:, 1), tok), 2};
 
 %Additional attributes?
