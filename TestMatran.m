@@ -38,7 +38,9 @@ classdef TestMatran < matlab.unittest.TestCase
     
     properties (TestParameter)
         %Files from the Nastran TPL for testing import from raw text file.
-        TPLTextImportFiles = {'\doc\dynamics\bd03bar1.dat', ...
+        TPLTextImportFiles = { ...
+            '\doc\dynamics\bd03bar1.dat', ... %simple beam
+            '\doc\dynamics\bd03car.dat' , ... %car frame model
             'aero\ha75b.dat'};
     end
     
