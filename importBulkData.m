@@ -106,8 +106,8 @@ rawFileData = readCharDataFromFile(bulkFilename, logfcn);
     IncludeFiles, 'Unif', false);
 
 if ~isempty(data)
-    logfcn(sprintf('Combining bulk data in file ''%s''.', filename));
-    error('Update code to handle case with INCLUDE files.');
+    logfcn(sprintf('Combining bulk data from file ''%s'' and any INCLUDE files...', bulkFilename));
+    combineBulkData(horzcat(FEM, data{:}));
 end
 
 %Combine data & diagnostics from INCLUDE data
