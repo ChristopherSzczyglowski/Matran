@@ -402,20 +402,31 @@ for iCard = 1 : numel(cardNames)
 %         set(card(~isWF), 'ColWidth', 8);
         
         %Set up character tokens for denoting progress
-        nChar    = 50;  %total number of characters to denote 100%
-        progChar = repmat({''}, [1, nCard]);
-        incr     = ceil(nCard / nChar);
-        if incr ~= 1
-            index           = 1 : incr : nCard;
-            progChar(index) = {'#'};          
+        nChar     = 50;  %total number of characters to denote 100%
+        progChar  = repmat({''}, [1, nCard]);
+        backspace = repmat({''}, [1, nCard]);
+        incr      = ceil(nCard / nChar);
+        if incr == 1
+            progress0 = '';
+        else
+            index        = 1 : incr : nCard;
+            num          = numel(index);
+            progress0    = ['[', repmat(' ', [1, num]), ']'];
+            progressStr  = arrayfun(@(ii) ['[', pad(repmat('#', [1, ii]), num), ']'], 1 : num, 'Unif', false);
+            backspaceStr =  {repmat('\b', [1, numel(progress0)])};  
+            backspace(index) = backspaceStr;         
+            progChar(index)  = progressStr;
         end
         
         logfcn('       ', 0);
+        logfcn(progress0, 0);
         %Extract raw text data for this card and assign to the object
         for iCard = 1 : nCard %#ok<FXSET> %extract properties
             [cardData, ~] = getCardData(BulkData, ind(iCard));
             extractCardData(BulkObj, cardData, iCard);
-            logfcn(progChar{iCard}, 0);
+            %Strip the previous progress string and write the new one
+            logfcn(backspace{iCard}, 0, 1);
+            logfcn(progChar{iCard} , 0);
         end
         logfcn('');
 
