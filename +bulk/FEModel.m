@@ -104,9 +104,12 @@ classdef FEModel < matlab.mixin.SetGet & mixin.Dynamicable
                    %Set the index by searching for matching IDs
                    index = nan(size(obj.(bulkNames{iB}).(Con(iC).Prop)));
                    for ii = 1 : size(index, 1)
-                       [~, index(ii, :), ~] = intersect( ...
-                           obj.(bulkNames{iB}).(Con(iC).DynProp).ID, ...
-                           obj.(bulkNames{iB}).(Con(iC).Prop)(ii, :));
+                       [~, index(ii, :)] = ismember(obj.( ...
+                           bulkNames{iB}).(Con(iC).Prop)(ii, :), ....
+                           obj.(bulkNames{iB}).(Con(iC).DynProp).ID);                       
+%                        [~, index(ii, :), bb] = intersect( ...
+%                            obj.(bulkNames{iB}).(Con(iC).DynProp).ID, ...
+%                            obj.(bulkNames{iB}).(Con(iC).Prop)(ii, :));
                    end
                    obj.(bulkNames{iB}).([Con(iC).DynProp, 'Index']) = index;
                end
@@ -157,6 +160,7 @@ classdef FEModel < matlab.mixin.SetGet & mixin.Dynamicable
             hg = vertcat(hg{:});
            
             legend(hAx, hg, get(hg, {'Tag'}), 'ItemHitFcn', @toggleVisible);
+            axis(hAx, 'equal');
             
         end
     end
