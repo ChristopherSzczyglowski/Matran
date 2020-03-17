@@ -76,6 +76,7 @@ classdef TestMatran < matlab.unittest.TestCase
                 %Initiate with no inputs
                 bulkObj = func();
                 if ~isa(bulkObj, 'bulk.BulkData')
+                    func();
                     continue
                 end
                 %Check each bulk data type
