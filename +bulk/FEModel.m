@@ -119,7 +119,7 @@ classdef FEModel < matlab.mixin.SetGet & mixin.Dynamicable
             end
             hg = vertcat(hg{:});
            
-            legend(hAx, hg, {hg.Tag}, 'ItemHitFcn', @toggleVisible);
+            legend(hAx, hg, get(hg, {'Tag'}), 'ItemHitFcn', @toggleVisible);
             
         end
     end
