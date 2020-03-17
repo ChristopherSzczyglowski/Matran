@@ -608,6 +608,7 @@ end
 end
 
 %Logging the progress
+
 function logger(str, bNewLine, bLiteral)
 %logger Presents the import display to the user.
 
@@ -656,6 +657,7 @@ BulkDataMask.PROD   = 'bulk.BeamProp';
 BulkDataMask.MAT1   = 'bulk.Material';
 BulkDataMask.SPC1   = 'bulk.Constraint';
 BulkDataMask.CAERO1 = 'bulk.AeroPanel';
+BulkDataMask.CQUAD4 = 'bulk.Panel';
 
 end
 
