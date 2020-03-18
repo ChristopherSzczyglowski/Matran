@@ -41,7 +41,8 @@ classdef TestMatran < matlab.unittest.TestCase
         TPLTextImportFiles = { ...
             '\doc\dynamics\bd03bar1.dat', ... %simple beam
             '\doc\dynamics\bd03car.dat' , ... %car frame model
-            'aero\ha75b.dat'};
+            '\doc\dynamics/bd03fix.dat' , ... %test fixture
+            'aero\ha75b.dat'}; %airplane
     end
     
     properties (Dependent)
