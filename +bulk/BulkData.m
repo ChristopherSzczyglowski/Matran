@@ -522,7 +522,7 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             %Expand card to have full columns of data
             %   - avoids lots of if/elseif statements
             nProp    = numel(propData);
-            propData = [propData ; repmat({''}, [numel(dataFormat) - nProp, 1])];
+            propData = [propData(:) ; repmat({''}, [numel(dataFormat) - nProp, 1])];
             
             %Remove any blank elements
             idx = dataFormat == 'b';
