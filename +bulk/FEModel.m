@@ -4,7 +4,13 @@ classdef FEModel < matlab.mixin.SetGet & mixin.Dynamicable
     %
     % Detailed Description:
     %   - 
-            
+        
+    properties (SetAccess = private, Hidden = true)
+        %Cell array of character vectors containing the names of the bulk
+        %data properties added using the 'addBulk' method.
+        BulkDataNames = {};
+    end
+    
     methods (Sealed) % managing a collection of bulk data
         function addBulk(obj, BulkObj)
             %addBulk Adds the 'BulkObj' to the FEModel as a dynamic
@@ -17,8 +23,13 @@ classdef FEModel < matlab.mixin.SetGet & mixin.Dynamicable
                 return
             end
             
+            if isprop(obj, cn)
+                error('TODO - Update code for the case where we are adding bulk data that already has a dynamic property');
+            end
+            
             addDynamicProp(obj, cn);
             obj.(cn) = BulkObj;
+            obj.BulkDataNames = [obj.BulkDataNames, {cn}];
             
         end
         function combineBulkData(obj)
@@ -29,13 +40,11 @@ classdef FEModel < matlab.mixin.SetGet & mixin.Dynamicable
                 return
             end
             
-            %Get names of dynamic properties
-            DynProps = horzcat(obj.DynamicProps);
-            if isempty(DynProps)
+            bulkNames = obj.BulkDataNames;
+            if isempty(bulkNames)
                 return
             end
-            bulkNames = unique({DynProps.Name});
-            
+                        
             %Combine each set of bulk data
             for iB = 1 : numel(bulkNames)
                 %Get the bulk data for this type from each model
@@ -67,12 +76,12 @@ classdef FEModel < matlab.mixin.SetGet & mixin.Dynamicable
            %      must be set correctly during the object constructor.
            %    - 
            
-           if isempty(obj.DynamicProps)
+           if isempty(obj.BulkDataNames)
                return
            end
            
            %What bulk data has been added?
-           bulkNames = {obj.DynamicProps.Name};
+           bulkNames = obj.BulkDataNames;
            bulkData  = get(obj, bulkNames);
            bulkClass = cellfun(@class, bulkData, 'Unif', false);
            for iB = 1 : numel(bulkNames)
@@ -122,17 +131,17 @@ classdef FEModel < matlab.mixin.SetGet & mixin.Dynamicable
             
             summary = {};
             
-            if isempty(obj.DynamicProps)
+            if isempty(obj.BulkDataNames)
                 return
             end
             
-            propNames = {obj.DynamicProps.Name};
+            bulkNames = obj.BulkDataNames;
                         
             %Summarise...
-            summary = cell(1, numel(propNames));
-            for iT = 1 : numel(propNames)
+            summary = cell(1, numel(bulkNames));
+            for iT = 1 : numel(bulkNames)
                 summary{iT} = sprintf( ...
-                    '%8s - %6i entry/entries', propNames{iT}, obj.(propNames{iT}).NumBulk);
+                    '%8s - %6i entry/entries', bulkNames{iT}, obj.(bulkNames{iT}).NumBulk);
             end
             
         end
@@ -142,7 +151,15 @@ classdef FEModel < matlab.mixin.SetGet & mixin.Dynamicable
         function hg = draw(obj, hAx) 
             %draw Method for plotting the content of a FEModel.
             
-            if nargin < 2
+            hg = [];
+            
+            assert(numel(obj) == 1, 'Method ''draw'' is not valid of object arrays.');
+            if isempty(obj.BulkDataNames)
+                warning('No bulk data found in the FEM. Returning an empty array.');
+                return
+            end
+            
+            if nargin < 2 || isempty(hAx)
                 hF  = figure('Name', 'Finite Element Model');
                 hAx = axes('Parent',hF, 'NextPlot', 'add', 'Box', 'on');
                 xlabel(hAx, 'X');
@@ -152,7 +169,7 @@ classdef FEModel < matlab.mixin.SetGet & mixin.Dynamicable
             validateattributes(hAx, {'matlab.graphics.axis.Axes'}, {'scalar'}, class(obj), 'hAx');
             
             %Run 'drawElement' method for each bulk object in the model
-            bulkNames = {obj.DynamicProps.Name};
+            bulkNames = obj.BulkDataNames;
             hg = cell(1, numel(bulkNames));
             for iB = 1 : numel(bulkNames)
                 hg{iB} = drawElement(obj.(bulkNames{iB}), hAx);
