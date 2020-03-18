@@ -657,8 +657,8 @@ BulkDataMask.PROD   = 'bulk.BeamProp';
 BulkDataMask.MAT1   = 'bulk.Material';
 BulkDataMask.SPC1   = 'bulk.Constraint';
 BulkDataMask.CAERO1 = 'bulk.AeroPanel';
-BulkDataMask.CQUAD4 = 'bulk.Panel';
-BulkDataMask.CTRIA3 = 'bulk.Panel';
+BulkDataMask.CQUAD4 = 'bulk.Shell';
+BulkDataMask.CTRIA3 = 'bulk.Shell';
 
 end
 
