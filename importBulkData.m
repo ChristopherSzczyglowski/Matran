@@ -351,7 +351,7 @@ ind = strfind(cardNames , ','); %TODO : Investigate what is quicker. Could do ce
 cardNames(idx) = arrayfun(@(i) cardNames{i}(1 : ind{i} - 1), find(idx), 'Unif', false);
 
 %Now get the actual unique names
-cardNames = unique(cardNames, 'stable');
+cardNames = strtrim(unique(cardNames, 'stable'));
 
 %Loop through cards - create objects & populate properties
 for iCard = 1 : numel(cardNames)
