@@ -40,7 +40,7 @@ classdef FEModel < matlab.mixin.SetGet & mixin.Dynamicable
                 return
             end
             
-            bulkNames = obj.BulkDataNames;
+            bulkNames = unique(horzcat(obj.BulkDataNames));
             if isempty(bulkNames)
                 return
             end
