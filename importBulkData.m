@@ -72,7 +72,6 @@ logfcn(sprintf(['The following cards have not been extracted ', ...
 end
 
 %Master function (recursive)
-
 function [FEM, unknownBulk] = importBulkDataFromFile(bulkFilename, logfcn)
 %importBulkDataFromFile Imports the bulk data from the file and returns an
 %instance of the 'bulk.FEModel' class.
@@ -117,7 +116,6 @@ unknownBulk = [unknownBulk, cat(2, leftover{:})];
 end
 
 %Reading raw text from file
-
 function rawFileData = readCharDataFromFile(filename, logfcn)
 %readCharDataFromFile Reads the data from the file as literal text.
 
@@ -145,7 +143,6 @@ fclose(fileID);
 end
 
 %Partitioning the Nastran input file
-
 function [execControl, caseControl, bulkData, unresolvedBulk] = splitInputFile(data, logfcn)
 %splitInputFile Splits the cell-string data in 'data' into
 %three segments: 'Executive Control', 'Case Control' & 'Bulk
@@ -206,7 +203,6 @@ logfcn(['Input data split into ''Executive Control'', ', ...
     end
 
 end
-
 function [Parameters, BulkData] = extractParameters(BulkData, logfcn)
 %extractParameters Extracts the parameters from the bulk data
 %and returns the cell array 'BD' with all parameter lines
@@ -258,7 +254,6 @@ BulkData = BulkData(~or(idx_PARAM, idx_MDLPRM));
     end
 
 end
-
 function [IncludeFiles, BulkData] = extractIncludeFiles(BulkData, logfcn, parentPath)
 %extractIncludeFiles Extracts the path to any files containing
 %data that is included in the bulk data.
@@ -276,7 +271,7 @@ if isempty(ind) %Escape route
 end
 
 for iFile = 1 : numel(ind) %Extract path to the included file
-        
+    
     %Extract all data related to the "INCLUDE" card
     [cardData, IncludeIndex{iFile}] = getCardData(BulkData, ind(iFile));
     
@@ -313,7 +308,6 @@ logfcn(sprintf('Found the following included files:'));
 logfcn(sprintf('\t- %s\n', IncludeFiles{:}));
 
 end
-
 function [FEM, UnknownBulk] = extractBulkData(BulkData, logfcn)
 %extractBulk Extracts the bulk data from the cell array
 %'BulkData' and returns a collection of bulk data and
@@ -420,8 +414,9 @@ for iCard = 1 : numel(cardNames)
         
         logfcn('       ', 0);
         logfcn(progress0, 0);
-        %Extract raw text data for this card and assign to the object
-        for iCard = 1 : nCard %#ok<FXSET> %extract properties
+        %Extract data for each instance of the card
+        for iCard = 1 : nCard %#ok<FXSET> 
+            %Extract raw text data for this card and assign to the object
             [cardData, ~] = getCardData(BulkData, ind(iCard));
             propData      = extractCardData(cardData);
             assignCardData(BulkObj, propData, iCard, BulkMeta);
@@ -451,7 +446,6 @@ end
 end
 
 %Reading text data as bulk data
-
 function [cardData, cardIndex] = getCardData(data, startIndex)
 %getCardData Extracts the MSC.Nastran bulk data for a given card from the
 %cell array 'data'. The card begins at 'startIndex' and the card data is
@@ -592,7 +586,6 @@ end
     end
 
 end
-
 function tf = iscont(str)
 %iscont Checks if the character array 'str' denotes a
 %continuation entry.
@@ -734,7 +727,6 @@ end
 
 % Defining the mask (TODO - Move this out of here. Make it generate
 % automatically as part of the testing process)
-
 function BulkDataMask = defineBulkMask()
 %defineBulkMask Defines the cross-references between bulk data types and
 %bulk data objects.
