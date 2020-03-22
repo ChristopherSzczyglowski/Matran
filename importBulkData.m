@@ -746,6 +746,7 @@ BulkDataMask.CROD   = 'bulk.Beam';
 BulkDataMask.PBAR   = 'bulk.BeamProp';
 BulkDataMask.PBEAM  = 'bulk.BeamProp';
 BulkDataMask.PROD   = 'bulk.BeamProp';
+BulkDataMask.PSHELL = 'bulk.Property';
 BulkDataMask.MAT1   = 'bulk.Material';
 BulkDataMask.SPC1   = 'bulk.Constraint';
 BulkDataMask.CAERO1 = 'bulk.AeroPanel';
@@ -753,6 +754,7 @@ BulkDataMask.CQUAD4 = 'bulk.Shell';
 BulkDataMask.CTRIA3 = 'bulk.Shell';
 BulkDataMask.AEFACT = 'bulk.List';
 BulkDataMask.SET1   = 'bulk.List';
+BulkDataMask.PAERO1 = 'bulk.List';
 
 end
 
