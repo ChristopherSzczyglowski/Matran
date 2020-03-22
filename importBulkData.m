@@ -751,6 +751,8 @@ BulkDataMask.SPC1   = 'bulk.Constraint';
 BulkDataMask.CAERO1 = 'bulk.AeroPanel';
 BulkDataMask.CQUAD4 = 'bulk.Shell';
 BulkDataMask.CTRIA3 = 'bulk.Shell';
+BulkDataMask.AEFACT = 'bulk.List';
+BulkDataMask.SET1   = 'bulk.List';
 
 end
 
