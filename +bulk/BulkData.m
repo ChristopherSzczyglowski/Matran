@@ -151,7 +151,7 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             idx = cellfun(@isvarname, prpNames);
             assert(all(idx), ['All properties defined in ''BulkProps'' must ', ...
                 'be valid variable names. The following property names did ' , ...
-                'not pass this assertion:\n\n\t%s\n'], strjoin(prpNames(idx), ', '));            
+                'not pass this assertion:\n\n\t%s\n'], strjoin(prpNames(~idx), ', '));            
             
             %Deal with masked properties
             propMask = p.Results.PropMask;               
