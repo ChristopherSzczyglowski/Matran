@@ -1,7 +1,7 @@
 # Matran
 A collection of functions and classes for importing Nastran bulk data and visualising results. 
 
-**This repository is currently under development and is not ready for general use. Any feedback is much appreciated! **
+**This repository is currently under development and is not ready for general use. Any feedback is much appreciated!**
 
 ## Getting Started
 
