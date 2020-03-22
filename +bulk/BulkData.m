@@ -4,6 +4,9 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
     % TODO: Add custom display so only properties of the 'BulkType' are
     % displayed.
     % TODO: Update the method for extracting list bulk data
+    % TODO: Think about how to handle bulk data types where a particular
+    % row/column can have a different property name depending on the data
+    % type. e.g. 'CQUAD4'
     
     %Visualisation
     properties
@@ -106,7 +109,7 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             idx = ismember(obj.ValidBulkNames, obj.CardName);
             val = obj.BulkDataProps(idx).PropDefault;
         end
-        function val = get.CurrentBulkDataTypes_(obj)    %get.CurrentBulkDataTypes_
+        function val = get.CurrentBulkDataTypes_(obj)   %get.CurrentBulkDataTypes_
             val = obj.CurrentBulkDataTypes;
             if isempty(val)
                 return
@@ -391,29 +394,12 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             % is called in a loop!!)
             
             %Get bulk data names, format & default values
-            %   - TODO: Move this outside of the function
             dataNames   = BulkMeta.Names;
             dataFormat  = BulkMeta.Format;
             dataDefault = BulkMeta.Default;
             lb = BulkMeta.Bounds(1, :);
             ub = BulkMeta.Bounds(2, :);
-            
-%             %Check for masked props and update card format
-%             idx     = ismember(obj.ValidBulkNames, obj.CardName);
-%             prpMask = obj.BulkDataProps(idx).PropMask;
-%             prpName = obj.BulkDataProps(idx).BulkProps;
-%             indices = ones(1, numel(prpName));
-%             if ~isempty(prpMask)
-%                 dataFormat  = i_repeatMaskedValues(dataFormat , prpName, prpMask);
-%                 dataDefault = i_repeatMaskedValues(dataDefault, prpName, prpMask);
-%                 %Update indices
-%                 indices(ismember(prpName, prpMask(1 : 2 : end))) = horzcat(prpMask{2 : 2 : end});
-%             end
-%             ub = cumsum(indices);
-%             lb = ub - indices + 1;
-%             
-%             dataFormat = horzcat(dataFormat{:});
-            
+                        
             %Expand card to have full columns of data
             %   - avoids lots of if/elseif statements
             nProp    = numel(propData);
@@ -494,7 +480,7 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
                 newval = horzcat(val{:});
                 
             end
-            
+                       
         end
     end
         
@@ -532,23 +518,23 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             
             %Have more than 6 characters been provided?
             if any(cellfun(@numel, valString) > 6)
-                throwME_SPC(obj, valString, prpName);
+                throwME_SPC;
             end
             
             %Has a negative number been provided?
             %if any(contains(cellstr(valString')', '-'))
             if any(cellfun(@(x) ~isempty(x), strfind(cellstr(valString')', '-')))
-                throwME_SPC(obj, valString, prpName);
+                throwME_SPC;
             end
                         
             %Are there any numbers outside the range [1 : 6]?
             if any(contains(valString, {'0', '7', '8', '9'}))
-                throwME_SPC(obj, valString, prpName);
+                throwME_SPC;
             end
             
             %TODO - Have any numbers been repeated twice?
             
-            function throwME_SPC(obj, ~, paramName)
+            function throwME_SPC
                 %throwME_SPC Throws an MException object containing the
                 %error message for a badly formatted SPC entry.
                 
@@ -575,16 +561,6 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             end
             validateattributes(val, {'numeric'}, [{'2d', 'real', ...
                 'finite', 'nonnan'}, extraargs], class(obj), prpName);
-        end
-        function validateBeamProp(obj, val, prpName)        %validateBeamProp
-            %validateBeamProp Checks that the values of the beam property
-            %with name 'prpName' matches the expected format.
-            %
-            % Each beam property is expected to be a 2d matrix of real 
-            % numbers.
-            
-            validateattributes(val, {'numeric'}, {'2d', 'nonempty', ...
-                'finite', 'real', 'nonnan'}, class(obj), prpName);
         end
         function validateLabel(obj, val, prpName, varargin) %validateLabel
             %validateLabel Checks that the value of the label with property
