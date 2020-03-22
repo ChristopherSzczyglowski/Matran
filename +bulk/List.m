@@ -2,6 +2,11 @@ classdef List < bulk.BulkData
     %List Describes a set of bulk data that can have an arbitrary number of
     %data points.
     %
+    % Valid Bulk Data Types:
+    %   - AEFACT
+    %   - SET1
+    %   - PAERO1
+    %
     % TODO - Change preallocation so list data preallocates as a cell
     % instead of a real.
     
@@ -19,6 +24,12 @@ classdef List < bulk.BulkData
                 'PropTypes'  , {'i'  , 'r'} , ...
                 'PropDefault', {''   , '' } , ...
                 'ListProp'   , {'Gi'});
+            %Initialise the bulk data sets
+            addBulkDataSet(obj, 'PAERO1'   , ...
+                'BulkProps'  , {'PID', 'Bi'}, ...
+                'PropTypes'  , {'i'  , 'i'} , ...
+                'PropDefault', {''   , ''}  , ...
+                'ListProp'   , {'Bi'});
             
             varargin = parse(obj, varargin{:});
             preallocate(obj);
@@ -54,6 +65,10 @@ classdef List < bulk.BulkData
             idx = or(aFormat(1 : nb4) == 'i', aFormat(1 : nb4) == 'r');
             dat(idx) = num2cell(str2double(dat(idx)));
             set(obj, b4List, dat);    %Assign to the object
+            
+            if isempty(strData) %Escape route
+                return
+            end
             
             %Parse the list data
             propData = i_parseListData(strData, obj.CardName);            
