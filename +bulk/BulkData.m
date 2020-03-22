@@ -372,115 +372,8 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
         end
     end
     
-    methods % interacting with .bdf files
-        function extractCardData(obj, cardData, index)
-            %extractCardData Extracts raw text data from 'cardData' for a
-            %table-formatted MSC.Nastran card relating to the object 'obj'.
-            %
-            % Table-formatted cards can ony have one value per property so
-            % it is a simple matter of extracting the data based on the
-            % delimiter.
-            %   * Fixed-width - Delimited by columns of equal width -> Data
-            %                   can be extracted using 'textscan'.
-            %   * Free-Field - Delimited by commas -> Data can be extracted
-            %                  using strsplit.
-            
-            if numel(obj) > 1
-                error(['Function ''extractCardData'' cannot handle ' , ...
-                    'object arrays. Check code to see why an object ', ...
-                    'array has been passed to this function.']);
-            end
-            
-            %Read data from the character array
-            if any(contains(cardData, ','))
-                %Free-Field
-                
-                nRow     = numel(cardData);
-                propData = cell(size(cardData));
-                
-                %Read each row using 'strsplit'
-                for iR = 1 : nRow
-                    %Delimit the data
-                    temp = strsplit(cardData{iR}, ',');
-                    %Assume the first entry is the card name or the
-                    %continuation entry
-                    propData{iR} = temp(2 : end);
-                end
-                
-                %Return a cell-vector
-                propData = horzcat(propData{:});
-                
-            else
-                %Fixed-Width
-                
-                n = numel(cardData);
-                
-                %Determine column width
-                cw      = repmat(8, [n, 1]);
-                idx     = contains(cardData, '*');
-                cw(idx) = 16;
-                
-                %Remove the first column of the card data
-                cardData = cellfun(@(x) x(9 : end), cardData, 'Unif', false);
-                
-                if all(idx) || nnz(idx) == 0
-                    %All one column width
-                    
-                    %Convert cell array to character array
-                    strData = cat(2, cardData{:});
-                    
-                    %Reshape using column width
-                    propData = i_splitDataByColWidth(strData, cw(1));
-                    
-                else
-                    %Mixed column widths - Loop through
-                    propData = cell(1, n);
-                    for ii = 1 : n
-                        propData{ii} = obj.splitDataByColWidth(cardData{ii}, cw(ii));
-                    end
-                    propData = vertcat(propData{:});
-                end
-                
-            end
-            
-            %Assign data to the object
-            assignCardData(obj, propData, index);
-            
-            function propData = i_splitDataByColWidth(strData, colWidth)
-                %i_splitDataByColWidth Splits the character array 'strData'
-                %into a cell string array of character vectors with maximum
-                %length 'colWidth'.
-                %
-                % This function is used to delimit the literal text data from a
-                % MSC.Nastran bulk data entry. It is assumed that columns 1 &
-                % 10 (i.e. characters 1-8 and 73-80) have been removed from
-                % each line.
-                %
-                % 'strData' is the concatenation of each line of the bulk data
-                % card with columns 1 and 10 removed.
-                
-                nChar = numel(strData);           %How many characters?
-                nRem  = mod(nChar, colWidth) - 1; %Anything left over after?
-                nData = floor(nChar / colWidth);  %How many properties?
-                
-                %Reshape
-                dataStr = strData(1 : (nData * colWidth));
-                endData = strData(end - nRem  : end);
-                propStr = reshape(dataStr, [colWidth, nData])';
-                
-                %Return cell array
-                propData = cellstr(propStr);
-                if ~isempty(endData)
-                    propData = [propData ; cellstr(endData)];
-                end
-                
-            end
-            
-        end
-    end
-    
-    methods (Access = protected) % assigning data during import
-        function assignCardData(obj, propData, index)
+    methods % assigning data during import
+        function assignCardData(obj, propData, index, BulkMeta)
             %assignCardData Assigns the card data for the object by
             %converting the raw text input to numeric/char as necessary.
             %
@@ -496,28 +389,30 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             % TODO - Move the definition of the card format outside the
             % function and pass in as an argument. (Remember this function
             % is called in a loop!!)
-                        
+            
             %Get bulk data names, format & default values
             %   - TODO: Move this outside of the function
-            dataNames   = obj.CurrentBulkDataProps;
-            dataFormat  = obj.CurrentBulkDataTypes;
-            dataDefault = obj.CurrentBulkDataDefaults;
+            dataNames   = BulkMeta.Names;
+            dataFormat  = BulkMeta.Format;
+            dataDefault = BulkMeta.Default;
+            lb = BulkMeta.Bounds(1, :);
+            ub = BulkMeta.Bounds(2, :);
             
-            %Check for masked props and update card format
-            idx     = ismember(obj.ValidBulkNames, obj.CardName);
-            prpMask = obj.BulkDataProps(idx).PropMask;
-            prpName = obj.BulkDataProps(idx).BulkProps;
-            indices = ones(1, numel(prpName));
-            if ~isempty(prpMask)
-                dataFormat  = i_repeatMaskedValues(dataFormat , prpName, prpMask);
-                dataDefault = i_repeatMaskedValues(dataDefault, prpName, prpMask);
-                %Update indices
-                indices(ismember(prpName, prpMask(1 : 2 : end))) = horzcat(prpMask{2 : 2 : end});
-            end
-            ub = cumsum(indices);
-            lb = ub - indices + 1;
-            
-            dataFormat = horzcat(dataFormat{:});
+%             %Check for masked props and update card format
+%             idx     = ismember(obj.ValidBulkNames, obj.CardName);
+%             prpMask = obj.BulkDataProps(idx).PropMask;
+%             prpName = obj.BulkDataProps(idx).BulkProps;
+%             indices = ones(1, numel(prpName));
+%             if ~isempty(prpMask)
+%                 dataFormat  = i_repeatMaskedValues(dataFormat , prpName, prpMask);
+%                 dataDefault = i_repeatMaskedValues(dataDefault, prpName, prpMask);
+%                 %Update indices
+%                 indices(ismember(prpName, prpMask(1 : 2 : end))) = horzcat(prpMask{2 : 2 : end});
+%             end
+%             ub = cumsum(indices);
+%             lb = ub - indices + 1;
+%             
+%             dataFormat = horzcat(dataFormat{:});
             
             %Expand card to have full columns of data
             %   - avoids lots of if/elseif statements
@@ -555,6 +450,33 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             for ii = 1 : numel(lb)
                 obj.(dataNames{ii})(:, index) = vertcat(propData{lb(ii) : ub(ii)});
             end
+
+        end
+        function BulkMeta = getBulkMeta(obj)
+            %getBulkMeta Returns the meta information for this bulk data
+            %entry based on the current card name.
+            
+            %Get bulk data names, format & default values
+            names   = obj.CurrentBulkDataProps;
+            format  = obj.CurrentBulkDataTypes;
+            default = obj.CurrentBulkDataDefaults;
+            
+            %Check for masked props and update card format
+            mask = obj.CurrentBulkDataStruct.PropMask;
+            indices = ones(1, numel(names));
+            if ~isempty(mask)
+                format  = i_repeatMaskedValues(format , names, mask);
+                default = i_repeatMaskedValues(default, names, mask);
+                %Update indices
+                indices(ismember(names, mask(1 : 2 : end))) = horzcat(mask{2 : 2 : end});
+            end
+            ub = cumsum(indices);
+            lb = ub - indices + 1;
+            
+            format = horzcat(format{:});
+            
+            BulkMeta = struct('Names', {names}, 'Format', format, ...
+                'Default', {default}, 'Bounds', [lb ; ub]); 
             
             function newval = i_repeatMaskedValues(val, prpName, prpMask)
                 %i_repeatMaskedValues Repeats the masked values to return

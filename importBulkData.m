@@ -411,24 +411,27 @@ for iCard = 1 : numel(cardNames)
             num          = numel(index);
             progress0    = ['[', repmat(' ', [1, num]), ']'];
             progressStr  = arrayfun(@(ii) ['[', pad(repmat('#', [1, ii]), num), ']'], 1 : num, 'Unif', false);
-            backspaceStr =  {repmat('\b', [1, numel(progress0)])};  
-            backspace(index) = backspaceStr;         
+            backspaceStr =  {repmat('\b', [1, numel(progress0)])};
+            backspace(index) = backspaceStr;
             progChar(index)  = progressStr;
         end
+        
+        BulkMeta = getBulkMeta(BulkObj);
         
         logfcn('       ', 0);
         logfcn(progress0, 0);
         %Extract raw text data for this card and assign to the object
         for iCard = 1 : nCard %#ok<FXSET> %extract properties
             [cardData, ~] = getCardData(BulkData, ind(iCard));
-            extractCardData(BulkObj, cardData, iCard);
+            propData      = extractCardData(cardData);
+            assignCardData(BulkObj, propData, iCard, BulkMeta);
             %Strip the previous progress string and write the new one
             logfcn(backspace{iCard}, 0, 1);
             logfcn(progChar{iCard} , 0);
         end
         logfcn('');
-
-        %Add object to the model        
+        
+        %Add object to the model
         addBulk(FEM, BulkObj);
         
         clear card
@@ -606,9 +609,103 @@ else
 end
 
 end
+function propData = extractCardData(cardData)
+%extractCardData Extracts raw text data from 'cardData' for a
+%table-formatted MSC.Nastran card relating to the object 'obj'.
+%
+% Table-formatted cards can ony have one value per property so
+% it is a simple matter of extracting the data based on the
+% delimiter.
+%   * Fixed-width - Delimited by columns of equal width -> Data
+%                   can be extracted using 'textscan'.
+%   * Free-Field - Delimited by commas -> Data can be extracted
+%                  using strsplit.
+
+%Read data from the character array
+if any(contains(cardData, ','))
+    %Free-Field
+    
+    nRow     = numel(cardData);
+    propData = cell(size(cardData));
+    
+    %Read each row using 'strsplit'
+    for iR = 1 : nRow
+        %Delimit the data
+        temp = strsplit(cardData{iR}, ',');
+        %Assume the first entry is the card name or the
+        %continuation entry
+        propData{iR} = temp(2 : end);
+    end
+    
+    %Return a cell-vector
+    propData = horzcat(propData{:});
+    
+else
+    %Fixed-Width
+    
+    n = numel(cardData);
+    
+    %Determine column width
+    cw      = repmat(8, [n, 1]);
+    idx     = contains(cardData, '*');
+    cw(idx) = 16;
+    
+    %Remove the first column of the card data
+    cardData = cellfun(@(x) x(9 : end), cardData, 'Unif', false);
+    
+    if all(idx) || nnz(idx) == 0
+        %All one column width
+        
+        %Convert cell array to character array
+        strData = cat(2, cardData{:});
+        
+        %Reshape using column width
+        propData = i_splitDataByColWidth(strData, cw(1));
+        
+    else
+        %Mixed column widths - Loop through
+        propData = cell(1, n);
+        for ii = 1 : n
+            propData{ii} = obj.splitDataByColWidth(cardData{ii}, cw(ii));
+        end
+        propData = vertcat(propData{:});
+    end
+    
+end
+
+    function propData = i_splitDataByColWidth(strData, colWidth)
+        %i_splitDataByColWidth Splits the character array 'strData'
+        %into a cell string array of character vectors with maximum
+        %length 'colWidth'.
+        %
+        % This function is used to delimit the literal text data from a
+        % MSC.Nastran bulk data entry. It is assumed that columns 1 &
+        % 10 (i.e. characters 1-8 and 73-80) have been removed from
+        % each line.
+        %
+        % 'strData' is the concatenation of each line of the bulk data
+        % card with columns 1 and 10 removed.
+        
+        nChar = numel(strData);           %How many characters?
+        nRem  = mod(nChar, colWidth) - 1; %Anything left over after?
+        nData = floor(nChar / colWidth);  %How many properties?
+        
+        %Reshape
+        dataStr = strData(1 : (nData * colWidth));
+        endData = strData(end - nRem  : end);
+        propStr = reshape(dataStr, [colWidth, nData])';
+        
+        %Return cell array
+        propData = cellstr(propStr);
+        if ~isempty(endData)
+            propData = [propData ; cellstr(endData)];
+        end
+        
+    end
+
+end
 
 %Logging the progress
-
 function logger(str, bNewLine, bLiteral)
 %logger Presents the import display to the user.
 
