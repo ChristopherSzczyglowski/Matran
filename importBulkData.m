@@ -389,9 +389,12 @@ for iCard = 1 : numel(cardNames)
         BulkObj = fcn(cn, nCard);
         
         %Which cards are wide-field format?
-%         isWF  = contains(col1(idx), '*');
-%         set(card(isWF) , 'ColWidth', 16);
-%         set(card(~isWF), 'ColWidth', 8);
+        isWF  = contains(col1(idx), '*');
+        if any(isWF)
+            error('Update code for wide-field format');
+        end
+        %         set(card(isWF) , 'ColWidth', 16);
+        %         set(card(~isWF), 'ColWidth', 8);
         
         %Set up character tokens for denoting progress
         nChar     = 50;  %total number of characters to denote 100%
@@ -437,7 +440,7 @@ for iCard = 1 : numel(cardNames)
         logfcn(sprintf('%-10s %-8s (%8i)', 'Skipped', ...
             cn, nCard));
         UnknownBulk{end + 1} = sprintf( ...
-            '%8s - %6i entry/entries', cn, nCard); 
+            '%8s - %6i entry/entries', cn, nCard);
         
     end
     
