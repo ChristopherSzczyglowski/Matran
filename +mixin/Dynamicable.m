@@ -45,15 +45,23 @@ classdef Dynamicable < dynamicprops
             %class property 'DynamicProps'.
             %
             % See also: dynamicprops.addprop
+            %           meta.dynamicproperty
              
-            assert(isvarname(prpName), ['The dynamic property must be ' , ...
-                'a valid variable name']);
+            p = [];
             
-            if isprop(obj, prpName)
+            if ~iscell(prpName)
+                prpName = {prpName};
+            end
+            assert(all(cellfun(@isvarname, prpName)), ['The dynamic ', ...
+                'property must be a valid variable name']);
+            
+            idx = cellfun(@(x) isprop(obj, x), prpName);
+            if all(idx)
                 return
             end
-            
-            p = addprop(obj, prpName);
+            prpName = prpName(~idx);
+
+            p = cellfun(@(x) addprop(obj, x), prpName);
             
             if isempty(obj.DynamicProps)
                 obj.DynamicProps = p;
