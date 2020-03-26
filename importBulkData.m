@@ -760,6 +760,12 @@ BulkDataMask.CTRIA3 = 'bulk.Shell';
 BulkDataMask.AEFACT = 'bulk.List';
 BulkDataMask.SET1   = 'bulk.List';
 BulkDataMask.PAERO1 = 'bulk.List';
+BulkDataMask.CONM1  = 'bulk.Mass';
+BulkDataMask.CONM2  = 'bulk.Mass';
+BulkDataMask.CMASS1 = 'bulk.ScalarElement';
+BulkDataMask.CMASS2 = 'bulk.ScalarElement';
+BulkDataMask.CMASS3 = 'bulk.ScalarElement';
+BulkDataMask.CMASS4 = 'bulk.ScalarElement';
 
 end
 
