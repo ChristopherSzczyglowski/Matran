@@ -15,7 +15,7 @@ classdef Shell < bulk.BulkData
     %   - 'CRAC2D'  -> TODO
     %   - 'CRAC3D'  -> TODO
     %   - 'CTETRA'  -> TODO
-    %   - 'CTRIA3'  -> TODO
+    %   - 'CTRIA3'
     %   - 'CTRIA6'  -> TODO
     %   - 'CTRIAR'  -> TODO
     %   - 'CTRIAX'  -> TODO
