@@ -171,7 +171,7 @@ classdef FEModel < matlab.mixin.SetGet & mixin.Dynamicable
             for iB = 1 : numel(bulkNames)
                 hg{iB} = drawElement(obj.(bulkNames{iB}), hAx);
             end
-            hg = vertcat(hg{:});
+            hg = horzcat(hg{:})';
            
             legend(hAx, hg, get(hg, {'Tag'}), 'ItemHitFcn', @toggleVisible);
             axis(hAx, 'equal');
