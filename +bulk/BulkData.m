@@ -505,11 +505,16 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
                 return
             end
             
-            idxChar = cellfun(@ischar, val);
+            idxChar      = cellfun(@ischar, val);
             val(idxChar) = cellfun(@str2double, val(idxChar), 'Unif', false);
             valNum       = horzcat(val{:});
             valString    = cellfun(@num2str, val, 'Unif', false);
-                        
+                  
+            %NaN will only be present if bad char data has been provided
+            if any(isnan(valNum))
+                throwME_SPC;
+            end
+            
             %First level of validation to check correct type and attributes
             validateattributes(valNum(~isnan(valNum)), {'numeric'}, {'row', 'integer', ...
                 'nonnan', 'finite', 'real'}, class(obj), prpName);
