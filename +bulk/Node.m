@@ -20,6 +20,7 @@ classdef Node < bulk.BulkData
                 'BulkProps'  , {'GID', 'CP', 'X', 'CD', 'PS', 'SEID'}, ...
                 'PropTypes'  , {'i'  , 'i' , 'r', 'i' , 'c' , 'i'}   , ...
                 'PropDefault', {''   , 0   , 0  , 0   , ''  , 0 }    , ...
+                'Connections', {'CP', 'bulk.CoordSystem', 'InputCoordSys', 'CD', 'bulk.CoordSystem', 'OutputCoordSys'}, ...
                 'PropMask'   , {'X', 3}, ...
                 'AttrList'   , {'X', {'nrows', 3}}, ...
                 'SetMethod'  , {'PS', @validateDOF});
@@ -40,6 +41,10 @@ classdef Node < bulk.BulkData
             %returns a single graphics handle for all the nodes in the
             %collection.
             
+            if strcmp(obj.CardName, 'SPOINT')
+                error('Update the Node draw method to plot scalar points at the origin');
+            end
+            
             if nargin < 3
                 mode = [];
             end
@@ -57,6 +62,13 @@ classdef Node < bulk.BulkData
             
             if nargin < 2
                 mode = [];
+            end
+            
+            if isprop(obj, 'CP')
+                cp = obj.CP;
+                if any(cp ~= 0)
+                    error('Update code to return coordinates from a different coordinate system');
+                end
             end
             
             %Assume the worst
