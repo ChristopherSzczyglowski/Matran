@@ -1,4 +1,4 @@
-function hg = drawNodes(coords, hParent)
+function hg = drawNodes(coords, hParent, varargin)
 %drawNodes Draws a set of node objects and returns the handle.
 
 hg  = line(hParent, ...
@@ -11,6 +11,10 @@ hg  = line(hParent, ...
     'MarkerEdgeColor', 'k'    , ...
     'Tag'            , 'Nodes', ...
     'SelectionHighlight', 'off');
+
+if ~isempty(varargin)
+    set(hg, varargin{:});
+end
 
 end
 
