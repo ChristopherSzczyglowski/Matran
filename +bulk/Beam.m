@@ -51,18 +51,11 @@ classdef Beam < bulk.BulkData
             %the nodes and returns a single handle for all the beams in the
             %collection.
             
-            xA = obj.Nodes.X(:, obj.NodesIndex(1, :));
-            xB = obj.Nodes.X(:, obj.NodesIndex(2, :));        
-            x  = padCoordsWithNaN([xA(1, :) ; xB(1, :)]);
-            y  = padCoordsWithNaN([xA(2, :) ; xB(2, :)]);
-            z  = padCoordsWithNaN([xA(3, :) ; xB(3, :)]);
+            coords = getDrawCoords(obj.Nodes, obj.DrawMode);            
+            xA     = coords(:, obj.NodesIndex(1, :));
+            xB     = coords(:, obj.NodesIndex(2, :));  
             
-            hg = line('XData', x, 'YData', y, 'ZData', z, ...
-                'Parent'   , hAx, ...
-                'LineStyle', '-', ...
-                'LineWidth', 1  , ...
-                'Color'    , 'k', ...
-                'Tag'      , 'Beams');
+            hg = drawLines(xA, xB, hAx);
             
         end
     end
