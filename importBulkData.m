@@ -1,4 +1,4 @@
-function FEModel = importBulkData(bulkFilename)
+function [FEModel, FileMeta] = importBulkData(bulkFilename)
 %importBulkData Imports the Nastran bulk data from a ASCII text file and
 %returns a 'bulk.FEModel' object containing the data.
 %
@@ -54,6 +54,8 @@ assert(any(strcmp(ext, validExt)), ['Expected the file extension to be ', ...
 
 %Import the data and return the 'bulk.FEModel' object
 [FEModel, skippedCards] = importBulkDataFromFile(bulkFilename, logfcn);
+
+FileMeta.UnknownBulk = strtrim(cellfun(@(x) x(1 : strfind(x, '-') - 1), skippedCards, 'Unif', false));
 
 %Build connections
 makeIndices(FEModel);
