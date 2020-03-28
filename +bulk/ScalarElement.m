@@ -58,6 +58,9 @@ classdef ScalarElement < bulk.BulkData
     methods % visualisation
         function hg = drawElement(obj, hAx)
 
+            %TODO - Add an option to draw grounded elements with a
+            %connection to the origin
+            
             coords1 = getDrawCoords(obj.Node1, obj.DrawMode); 
             coords2 = getDrawCoords(obj.Node2, obj.DrawMode);
             

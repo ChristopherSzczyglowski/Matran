@@ -1,4 +1,12 @@
 classdef Node < bulk.BulkData
+    %Node Describes a point in 3D-space for use in a finite element model.
+    %
+    % The definition of the 'Node' object matches that of the GRID bulk
+    % data type from MSC.Nastran.
+    %
+    % Valid Bulk Data Types:
+    %   - 'GRID'
+    %   - 'SPOINT'
     
     %Store results data
     properties (Hidden = true)
