@@ -501,9 +501,13 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             
             assert(iscell(val), ['Expected ''%s'' to be a cell-array ', ...
                 'of DOF identifiers, e.g. ''123456''.'], prpName);
-            if all(cellfun(@isempty, val)) %If it is empty then nothing to check
+            idx = cellfun(@isempty, val);
+            if all(idx) %If it is empty then nothing to check
                 return
             end
+            
+            %Only retain the non-empty data
+            val = val(~idx);
             
             idxChar      = cellfun(@ischar, val);
             val(idxChar) = cellfun(@str2double, val(idxChar), 'Unif', false);
