@@ -743,6 +743,7 @@ function BulkDataMask = defineBulkMask()
 
 BulkDataMask = struct();
 
+BulkDataMask.CORD2R = 'bulk.CoordSystem';
 BulkDataMask.GRID   = 'bulk.Node';
 BulkDataMask.SPOINT = 'bulk.Node';
 BulkDataMask.CBAR   = 'bulk.Beam';
