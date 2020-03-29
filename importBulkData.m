@@ -67,9 +67,13 @@ logfcn(sprintf('Extraction summary :\n'));
 logfcn(sprintf(['The following cards have been extracted ', ...
     'successfully from the file ''%s'':\n\t%-s\n'], ...
     bulkFilename, sprintf('%s\n\t', summary{:})));
-logfcn(sprintf(['The following cards have not been extracted ', ...
-    'from the file ''%s'':\n\n\t%-s\n'], bulkFilename, ...
-    sprintf('%s\n\t', skippedCards{:})));
+if isempty(skippedCards)
+    logfcn('All bulk data entries were successfully extracted!');
+else
+    logfcn(sprintf(['The following cards have not been extracted ', ...
+        'from the file ''%s'':\n\n\t%-s\n'], bulkFilename, ...
+        sprintf('%s\n\t', skippedCards{:})));
+end
 
 end
 
@@ -357,8 +361,8 @@ for iCard = 1 : numel(cardNames)
     %Find all cards of this type in the collection BUT do not
     %include continuation lines. We are searching for the first
     %line of the card.
-    idx = and(contains(col1, cn), ~idxCont);
-    %                 idx   = and(or(strcmp(col1, cn), strcmp(col1, [cn, '*'])), ~idxCont);
+    %idx = and(contains(col1, cn), ~idxCont);
+    idx   = and(or(strcmp(col1, cn), strcmp(col1, [cn, '*'])), ~idxCont);
     %                 idx   = and(contains(col1, cn), ~idxCont);
     ind   = find(idx == true);
     nCard = nnz(idx);
@@ -456,7 +460,7 @@ end
 end
 
 %Reading text data as bulk data
-function [cardData, cardIndex] = getCardData(data, startIndex)
+function [cardData, cardIndex] = getCardData(data, startIndex, col1)
 %getCardData Extracts the MSC.Nastran bulk data for a given card from the
 %cell array 'data'. The card begins at 'startIndex' and the card data is
 %extracted by searching 'data' for the continuation entries relating to
@@ -540,9 +544,10 @@ else
         
         %Find the continuation line
         %   - Can be anywhere in the file
-        index = find(contains(data, endCol));
+        index = find(ismember(col1, endCol));
         if isempty(index)
-            error('Continuation entry is not in this file. Update code so we can search all other files as well');
+            break
+            %error('Continuation entry is not in this file. Update code so we can search all other files as well');
         end
         
         %Remove lines we already know about
@@ -768,12 +773,20 @@ BulkDataMask.CTRIA3 = 'bulk.Shell';
 BulkDataMask.AEFACT = 'bulk.List';
 BulkDataMask.SET1   = 'bulk.List';
 BulkDataMask.PAERO1 = 'bulk.List';
+BulkDataMask.FLFACT = 'bulk.List';
 BulkDataMask.CONM1  = 'bulk.Mass';
 BulkDataMask.CONM2  = 'bulk.Mass';
 BulkDataMask.CMASS1 = 'bulk.ScalarElement';
 BulkDataMask.CMASS2 = 'bulk.ScalarElement';
 BulkDataMask.CMASS3 = 'bulk.ScalarElement';
 BulkDataMask.CMASS4 = 'bulk.ScalarElement';
+BulkDataMask.CELAS1 = 'bulk.ScalarElement';
+BulkDataMask.CELAS2 = 'bulk.ScalarElement';
+BulkDataMask.AERO   = 'bulk.AnalysisData';
+BulkDataMask.EIGR   = 'bulk.AnalysisData';
+BulkDataMask.EIGRL  = 'bulk.AnalysisData';
+BulkDataMask.FLUTTER = 'bulk.AnalysisData';
+BulkDataMask.SPLINE2 = 'bulk.AnalysisData';
 
 end
 
