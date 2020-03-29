@@ -1,12 +1,12 @@
 classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dynamicable
     %BulkData Base-class of all bulk data objects.
     %
-    % TODO: Add custom display so only properties of the 'BulkType' are
-    % displayed.
-    % TODO: Update the method for extracting list bulk data
     % TODO: Think about how to handle bulk data types where a particular
     % row/column can have a different property name depending on the data
     % type. e.g. 'CQUAD4'
+    % TODO: Think about adding another option to the BulkDataStructure
+    % which allows a bulk property to have a list of allowable characters,
+    % e.g. MASS, MAX, POINT for the EIGRL card
     
     %Visualisation
     properties
@@ -128,7 +128,7 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             addParameter(p, 'PropTypes'  , [], @iscellstr);
             addParameter(p, 'PropDefault', [], @iscell);
             addParameter(p, 'PropMask'   , [], @iscell);
-            addParameter(p, 'ListProp'   , [], @iscellstr);
+            addParameter(p, 'ListProp'   , {}, @iscellstr);
             addParameter(p, 'Connections', [], @iscell);
             addParameter(p, 'AttrList'   , [], @iscell);
             addParameter(p, 'SetMethod'  , [], @iscell);
@@ -365,6 +365,11 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
                 idx = ismember(prpNames, BulkDataInfo.PropMask((2 * i) - 1));
                 numVal{idx} = repmat(numVal{idx}, [BulkDataInfo.PropMask{2 * i}, 1]);
             end
+            if ~isempty(BulkDataInfo.PropList)
+                idxList         = ismember(BulkDataInfo.BulkProps(idxNum), BulkDataInfo.PropList);
+                numVal(idxList) = cellfun(@num2cell, numVal(idxList), 'Unif', false);
+            end
+            %   - List properties are preallocated as cells
             set(obj, BulkDataInfo.BulkProps(idxNum), numVal);
             
             %Char data ('c') are stored as cell-strings
@@ -438,17 +443,115 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             end
 
         end
+        function assignListCardData(obj, propData, index, BulkMeta)
+            %assignCardData
+            
+            %Index the list
+            dataNames  = BulkMeta.Names;
+            dataFormat = BulkMeta.Format;
+            lb         = BulkMeta.Bounds(1, :);
+            ub         = BulkMeta.Bounds(2, :);
+            listNames  = BulkMeta.ListProp;
+            ind        = find(contains(dataNames, listNames) == true);
+            
+            %Grab variable names
+            b4List = dataNames(1 : ind(1) - 1);
+            nb4    = numel(b4List);
+            if numel(dataNames) > ind(end) %Is there any data after the list?
+                error('Update code to extract bulk data after a list');
+                afterList = dataNames(ind(end) + 1 : end);
+                nAfter = numel(afterList);
+            end            
+            
+            %Parse the data before the list starts
+            dat     = propData(1 : nb4);
+            strData = propData(nb4 + 1 : end);
+            
+            %Convert to correct data types
+            idx       = or(dataFormat(1 : nb4) == 'i', dataFormat(1 : nb4) == 'r');
+            dat(idx)  = num2cell(str2double(dat(idx)));
+            dat(~idx) = cellfun(@(x) {x}, dat(~idx), 'Unif', false);
+            %set(obj, b4List, dat);                           
+            for ii = 1 : numel(b4List) %Assign to the object 
+                obj.(dataNames{ii})(:, index) = vertcat(dat{lb(ii) : ub(ii)});
+            end
+            
+            if isempty(strData) %Escape route
+                return
+            end
+            
+            %Parse the list data
+            propData = i_parseListData(strData, obj.CardName);            
+            
+            function propData = i_parseListData(strData, nam)
+                %i_parseListData Converts all the data in 'strData' into
+                %type double. If the keywork 'THRU' is found then it is
+                %replaced by the intermediate numbers.
+                %
+                % TODO - Update this so it can handle lists of strings.
+                
+                strData(cellfun(@isempty, strData)) = [];
+                
+                %Convert to numeric data & check for NaN (e.g. char data)
+                propData = str2double(strData);                
+                idx_     = isnan(propData);
+                propData = num2cell(propData);
+                
+                %Populate intermediate ID numbers
+                if any(idx_)
+                                        
+                    %Check for "THRU" keyword
+                    nanData = strData(idx_);
+                    
+                    %Tell the user if we can't handle it
+                    if any(~contains(nanData, 'THRU'))
+                        error(['Unhandled text data in the element %s. ', ...
+                            'The following words were unable to be ', ...
+                            'parsed\n\t%s'], nam, ...
+                            sprintf('%s\n\t', nanData{:}))
+                    end
+                    
+                    %Use linear indexing
+                    ind_ = find(idx_ == true);
+                    
+                    %Populate intermediate terms
+                    for i = 1 : numel(nanData)
+                        propData{ind_} = ((propData{ind_ - 1} + 1) : ...
+                            1 : (propData{ind_ + 1} - 1));
+                    end
+                end
+                
+            end
+                       
+            %Split into sets of 'numel(listVar)'
+            nListVar = numel(listNames);
+            if nListVar > 1
+                error('Check code runs and use row vectors not column vectors.');
+            end
+            propData = [propData{:}];
+            nData    = numel(propData);
+            propData = reshape(propData, [nData / nListVar, nListVar]);
+            propData = num2cell(propData, 1);
+            
+            %Assign to object
+            for ii = 1 : numel(listNames)
+               obj.(listNames{ii}){index} = propData{ii}; 
+            end
+                        
+        end    
         function BulkMeta = getBulkMeta(obj)
             %getBulkMeta Returns the meta information for this bulk data
             %entry based on the current card name.
             
+            CBDS = obj.CurrentBulkDataStruct;
+            
             %Get bulk data names, format & default values
-            names   = obj.CurrentBulkDataProps;
-            format  = obj.CurrentBulkDataTypes;
-            default = obj.CurrentBulkDataDefaults;
+            names   = CBDS.BulkProps;
+            format  = CBDS.PropTypes;
+            default = CBDS.PropDefault;
             
             %Check for masked props and update card format
-            mask = obj.CurrentBulkDataStruct.PropMask;
+            mask = CBDS.PropMask;
             indices = ones(1, numel(names));
             if ~isempty(mask)
                 format  = i_repeatMaskedValues(format , names, mask);
@@ -462,7 +565,8 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             format = horzcat(format{:});
             
             BulkMeta = struct('Names', {names}, 'Format', format, ...
-                'Default', {default}, 'Bounds', [lb ; ub]); 
+                'Default', {default}, 'Bounds', [lb ; ub], ...
+                'ListProp', {CBDS.PropList}); 
             
             function newval = i_repeatMaskedValues(val, prpName, prpMask)
                 %i_repeatMaskedValues Repeats the masked values to return
@@ -487,6 +591,10 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
     methods (Sealed) % validation
         function validateID(obj, val, prpName, varargin)    %validateID
             if isempty(val)
+                return
+            end
+            if iscell(val)
+                cellfun(@(x) validateID(obj, x, prpName), val)
                 return
             end
             validateattributes(val, {'numeric'}, {'integer', '2d', ...
@@ -567,6 +675,10 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             
             if nargin < 4
                 extraargs = [];
+            end
+            if iscell(val)
+                cellfun(@(x) validateReal(obj, x, prpName, extraargs), val)
+                return
             end
             validateattributes(val, {'numeric'}, [{'2d', 'real', ...
                 'finite', 'nonnan'}, extraargs], class(obj), prpName);
