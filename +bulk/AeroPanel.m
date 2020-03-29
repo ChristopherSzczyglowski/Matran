@@ -57,6 +57,10 @@ classdef AeroPanel < bulk.BulkData
     methods % helper functions 
         function PanelData = getPanelData(obj)
             %getPanelData Calculates the panel coordinates.
+            
+            if numel(obj.EID) > 1
+                error('Check code works for multiple sets of CAERO1 panels.');
+            end
            
             PanelData = [];
             
@@ -97,7 +101,7 @@ classdef AeroPanel < bulk.BulkData
                 %i_getPanelBoundaries Returns the normalised increments for
                 %the panels in the spanwise and chordwise directions.
                 
-                if isempty(obj.LSPAN)
+                if isempty(obj.SpanDivision)
                     error('Check this');
                     dSpan   = abs(obj.X4(2, :) - obj.X1(2, :)) ./ obj.NSPAN;
                     etaSpan = arrayfun(@(ds) unique([0 : ds :  1, 1]), dSpan, 'Unif', false);
@@ -105,13 +109,16 @@ classdef AeroPanel < bulk.BulkData
                     etaSpan = obj.SpanDivision.Di;
                 end
                 
-                if isempty(obj.LCHORD)
-                    error('Check this');
-                    dSpan   = obj.X12 ./ obj.NCHORD;
-                    etaChord = arrayfun(@(ds) unique([0 : ds :  1, 1]), dSpan, 'Unif', false);
+                if isempty(obj.ChordDivision)
+                    %error('Check this');
+                    dSpan   = 1 ./ obj.NCHORD;
+                    etaChord = arrayfun(@(ds) unique([0 : ds :  1, 1]), dSpan, 'Unif', false);                    
                 else
                     etaChord = obj.ChordDivision.Di;
                 end
+                
+                etaChord = etaChord{1};
+                etaSpan  = etaSpan{1};
                 
                 if iscolumn(etaSpan)
                     etaSpan = etaSpan';
