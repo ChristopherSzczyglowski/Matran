@@ -93,7 +93,19 @@ classdef FEModel < matlab.mixin.SetGet & mixin.Dynamicable
                end
                nCon = numel(Con);
                for iC = 1 : nCon
-                   idx = or(ismember(bulkNames, Con(iC).Type), ismember(bulkClass, Con(iC).Type));
+                   type = Con(iC).Type; %type of bulk data that we are trying to connect to
+                   %ID numbers which identify the connections to resolve
+                   idNum = obj.(bulkNames{iB}).(Con(iC).Prop);
+                   if iscell(idNum)
+                       %List bulk will have a cell instead of array
+                       idNum = idNum{1};
+                   end
+                   if ~any(idNum)
+                       %Nothing to index!
+                       continue
+                   end
+                   %Does the FEM contain this type of data?
+                   idx = or(ismember(bulkNames, type), ismember(bulkClass, type));
                    if ~any(idx)
                         warning(['Unable to resolve connections for the ' , ...
                             '%s property in the %s object. No instances ' , ...
@@ -103,18 +115,21 @@ classdef FEModel < matlab.mixin.SetGet & mixin.Dynamicable
                             Con(iC).Type, Con(iC).Type);
                          continue
                    end
+                   %If we have mutliple instances of this bulk data type
+                   %then we need to find the one that contains the ID num
+                   index = find(idx);
+                   idx   = cellfun(@(o) any(ismember(o.ID, idNum)), bulkData(idx));
                    assert(nnz(idx) == 1, ['Ambiguous match when resolving ', ...
                        'the indices for the %s property in the %s object. ', ...
                        'Check that the BulkDataStructure is correctly '    , ...
                        'defined in the class constructor.'], Con(iC).DynProp, bulkNames{iB});
-                   data = bulkData{idx};
+                   data = bulkData{index(idx)};
                    %Update handle reference 
                    obj.(bulkNames{iB}).(Con(iC).DynProp) = data;
                    %Set the index by searching for matching IDs
-                   index = nan(size(obj.(bulkNames{iB}).(Con(iC).Prop)));
+                   index = nan(size(idNum));
                    for ii = 1 : size(index, 1)
-                       [~, index(ii, :)] = ismember(obj.( ...
-                           bulkNames{iB}).(Con(iC).Prop)(ii, :), ....
+                       [~, index(ii, :)] = ismember(idNum(ii, :), ....
                            obj.(bulkNames{iB}).(Con(iC).DynProp).ID);     
                    end
                    obj.(bulkNames{iB}).([Con(iC).DynProp, 'Index']) = index;
