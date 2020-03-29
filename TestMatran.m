@@ -10,8 +10,10 @@ classdef TestMatran < matlab.unittest.TestCase
     %	- Available tests:
     %       + Importing models
     %           ImportFromTPLTextFile
+    %       + Checking codebase
+    %           constructBulk
     %   - To run the test 'ImportFromTPLTextFile' the user must set the
-    %     preference 'PathToNastranTPL' on their local user profile. This 
+    %     preference 'PathToNastranTPL' on their local user profile. This
     %     can  be done via:
     %       >> setpref('matran', 'PathToNastranTPL', <pathToTPL>);
     %   The TPL is typically found at
@@ -35,7 +37,10 @@ classdef TestMatran < matlab.unittest.TestCase
     %	- Initial function:
     %
     % <end_of_pre_formatted_H1>
+    %
+    %
     
+    %Importing
     properties (TestParameter)
         %Files from the Nastran TPL for testing import from raw text file.
         TPLTextImportFiles = { ...
@@ -43,6 +48,10 @@ classdef TestMatran < matlab.unittest.TestCase
             '\doc\dynamics\bd03car.dat' , ... %car frame model
             '\doc\dynamics\bd03fix.dat' , ... %test fixture
             'aero\ha75b.dat'}; %airplane
+    end
+    properties (SetAccess = private)
+        TestFigure
+        UnknownBulk = {};
     end
     
     properties (Dependent)
@@ -56,12 +65,104 @@ classdef TestMatran < matlab.unittest.TestCase
                 val = getpref('matran', 'PathToNastranTPL');
             else
                 val = uigetdir('C:\Program Files', 'Please select the folder location of the Nastran Test Problem Library');
-                setpref('matran', 'PathToNastranTPL', val);
+                if isnumeric(val)
+                    val = [];
+                else
+                    setpref('matran', 'PathToNastranTPL', val);
+                end
             end
+        end        
+    end
+    
+    methods % construction
+        function obj = TestMatran(varargin)
+            
+            p = inputParser;
+            addParameter(p, 'CheckBulkCoverage', false, @(x)validateattributes(x, {'logical'}, {'scalar'}));
+            parse(p, varargin{:});
+            
+            if p.Results.CheckBulkCoverage
+                checkBulkCoverage(obj);
+            end
+            
         end
     end
     
-    methods (Test) % test bulk class construction
+    methods % helper methods for executing tests
+        function TestResults = runSomeTests(obj, testNames)
+            %runSomeTests Runs all tests whose procedure name matches the
+            %tokens in 'testNames'.
+            
+            if nargin < 2 %run all tests
+                testNames = getTestNames(obj);
+            end
+            %#ok<*ISCLSTR>
+            obj.parseTestNames(testNames);
+            
+            TestSuite   = getTestSuite(obj, testNames);
+            TestResults = run(TestSuite);
+        end
+        function TestSuite = getTestSuite(obj, testNames)
+            %getTestSuite Returns an array of 'matlab.unittest.Test'
+            %objects with procedure name matching 'testNames'.
+            
+            if nargin < 2 %run all tests
+                testNames = getTestNames(obj);
+            end
+            obj.parseTestNames(testNames);
+            
+            TestSuite  = matlab.unittest.TestSuite.fromClass(metaclass(obj));
+            idx        = contains({TestSuite.ProcedureName}, testNames);
+            TestSuite  = TestSuite(idx);
+        end
+        function testNames = getTestNames(obj)
+            %getTestNames Returns a cell-string containing the names of all
+            %test methods in the class.
+            
+            mc        = metaclass(obj);
+            tdx       = arrayfun(@(x)isprop(x, 'Test') && x.Test, mc.MethodList);
+            testNames = {mc.MethodList(tdx).Name};
+        end
+    end
+    methods (Static)
+        function parseTestNames(testNames)
+            assert(iscellstr(testNames), ['Expected ''testNames'' to ', ...
+                'be a cell-array containing the names of test proceudres.']);
+        end
+    end
+    
+    %% Executing multiple tests
+    
+    methods % checking bulk data coverage
+        function checkBulkCoverage(obj)
+            %checkBulkCoverage Runs all tests that involve importing bulk
+            %data from input files and returns a list of all bulk data
+            %types that were not recognised.
+            %
+            % See also: https://www.mathworks.com/help/matlab/matlab_prog/write-plugin-to-add-data-to-test-results.html
+            
+            return
+            
+            tn = getTestNames(obj);
+            tn = tn(contains(tn, 'import'));
+            TS = getTestSuite(obj, tn);
+            
+            Runner = matlab.unittest.TestRunner.withNoPlugins;
+            Runner.addPlugin(DetailsRecordingPlugin)
+            
+            TR = Runner.run(TS);
+            
+        end
+        function val = getUniqueUnknownBulk(obj)
+            blk = {obj.UnknownBulk};
+            val = unique(horzcat(blk{:}));
+        end
+    end
+    
+    %% Tests
+    
+    %Test bulk class construction
+    methods (Test)
         function constructBulk(obj)
             %constructBulk Checks that each bulk data object can be
             %constructed with different levels of input.
@@ -90,20 +191,10 @@ classdef TestMatran < matlab.unittest.TestCase
             
         end
     end
-    
-    methods (Test) % importing
-        function importFromTPLTextFile(obj, TPLTextImportFiles)
-            %importFRomTPLTextFile Attempts to import a FE model from a
-            %text file contained in the Nastran Test Problem Library (TPL).
-            
-            file = fullfile(obj.PathToNastranTPL, TPLTextImportFiles);
-            FEM  = importBulkData(file);
-            draw(FEM);
-        end
-    end
-    
-    methods (Static) % helper functions
+    methods (Static)
         function bulkClasses = getBulkClasses
+            %getBulkClasses Returns a list of all bulk data classes in the
+            %+bulk package.
             
             %Get location of the +bulk folder
             loc = fullfile(fileparts(mfilename('fullpath')), '+bulk');
@@ -122,6 +213,43 @@ classdef TestMatran < matlab.unittest.TestCase
             assert(~isempty(bulkClasses), ['No classes found in the ', ...
                 '+bulk package folder. Check the codebase.']);
             
+        end
+    end
+    
+    %Importing
+    methods (Test)
+        function importFromTPLTextFile(obj, TPLTextImportFiles)
+            %importFRomTPLTextFile Attempts to import a FE model from a
+            %text file contained in the Nastran Test Problem Library (TPL).
+            
+            %If the location of the Test Problem Library is unset then quit
+            tpl = obj.PathToNastranTPL;
+            if isempty(tpl)
+                return
+            end
+            
+            [FEM, Meta]  = importBulkData(fullfile(tpl, TPLTextImportFiles));
+            
+            obj.UnknownBulk = Meta.UnknownBulk;
+            
+            hg = draw(FEM);
+            
+            %Stash the figure
+            hF = ancestor(hg, 'figure');
+            if iscell(hF)
+                hF = unique(vertcat(hF{:}));
+            end
+            if isempty(hF)
+                hF = gcf;
+            end
+            obj.TestFigure = hF;
+        end
+    end
+    methods (TestMethodTeardown)
+        function closeFigures(obj)
+            if isa(obj.TestFigure, 'matlab.ui.Figure')
+                close(obj.TestFigure);
+            end
         end
     end
     
