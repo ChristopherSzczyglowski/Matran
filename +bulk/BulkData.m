@@ -362,7 +362,7 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             numVal = repmat({zeros(1, nb)}, [1, nnz(idxNum)]);
             %   - Repeat any masked properties
             for i = 1 :  numel(BulkDataInfo.PropMask) / 2
-                idx = ismember(prpNames, BulkDataInfo.PropMask((2 * i) - 1));
+                idx = ismember(prpNames(idxNum), BulkDataInfo.PropMask((2 * i) - 1));
                 numVal{idx} = repmat(numVal{idx}, [BulkDataInfo.PropMask{2 * i}, 1]);
             end
             if ~isempty(BulkDataInfo.PropList)
