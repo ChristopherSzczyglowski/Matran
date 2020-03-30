@@ -48,6 +48,8 @@ classdef TestMatran < matlab.unittest.TestCase
             '\doc\dynamics\bd03car.dat' , ... %car frame model
             '\doc\dynamics\bd03fix.dat' , ... %test fixture
             'aero\ha75b.dat'}; %airplane
+        TextImportFiles = { ...
+            'uob_HARW\wing_model_R.bdf'}; %HARW wing
     end
     properties (SetAccess = private)
         TestFigure
@@ -228,7 +230,29 @@ classdef TestMatran < matlab.unittest.TestCase
                 return
             end
             
-            [FEM, Meta]  = importBulkData(fullfile(tpl, TPLTextImportFiles));
+            importThenDraw(obj, fullfile(tpl, TPLTextImportFiles))
+        end
+        function importFromTextFile(obj, TextImportFiles)
+            %importFRomTPLTextFile Attempts to import a FE model from a
+            %text file using the standard Nastran input format.
+            
+            %Assume the file is contained in the 'models' directory
+            importThenDraw(obj, fullfile(pwd, 'models', TextImportFiles));
+        end
+    end
+    methods (TestMethodTeardown)
+        function closeFigures(obj)
+            if isa(obj.TestFigure, 'matlab.ui.Figure')
+                close(obj.TestFigure);
+            end
+        end
+    end
+    methods (Access = private)
+        function importThenDraw(obj, filename)
+            %importThenDraw Imports the model from the Nastran text file
+            %'filename' and draws the model.
+            
+            [FEM, Meta]  = importBulkData(filename);
             
             obj.UnknownBulk = Meta.UnknownBulk;
             
@@ -243,13 +267,6 @@ classdef TestMatran < matlab.unittest.TestCase
                 hF = gcf;
             end
             obj.TestFigure = hF;
-        end
-    end
-    methods (TestMethodTeardown)
-        function closeFigures(obj)
-            if isa(obj.TestFigure, 'matlab.ui.Figure')
-                close(obj.TestFigure);
-            end
         end
     end
     
