@@ -33,18 +33,26 @@ classdef Mass < bulk.BulkData
     end
     
     methods % visualisation
-        function hg = drawElement(obj, hAx)
+        function hg = drawElement(obj, hAx, varargin)
+            
+            p = inputParser;
+            addParameter(p, 'AddOffset', true, @(x)validateattributes(x, {'logical'}, {'scalar'}));
+            parse(p, varargin{:});
             
             hg = [];
                        
+            if any(obj.CID)
+                error('Update draw method for different offset systems.');
+            end
+            
             coords = getDrawCoords(obj.Nodes, obj.DrawMode);
             if isempty(coords)
                 return
             end
             coords = coords(:, obj.NodesIndex);
             
-            if isprop(obj, 'X')
-                error('Update drawElement method for offsets from nodes (CONM2)');
+            if p.Results.AddOffset %Add offset
+                coords = coords + obj.X;
             end
             
             hg = drawNodes(coords, hAx, ...
