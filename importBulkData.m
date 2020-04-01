@@ -334,11 +334,16 @@ BulkDataMask = defineBulkMask();
 
 %Extract all card names and continuation entries (for indexing)
 col1 = cellfun(@(x) x(1 : 8), BulkData, 'Unif', false);
+%   - If a comma is present then remove data before the comma
+idx  = contains(col1, ',');
+ind_ = strfind(col1, ',');
+col1(idx) = arrayfun(@(i) col1{i}(1 : ind_{i} - 1), find(idx), 'Unif', false);
 
 %Find all unique names in the collection
 %   - N.B. Uniqueness not guaranteed because of potential for
 %          free-field bulk data cards.
 idxCont   = cellfun(@(x) iscont(x), col1);
+idxCont   = or(idxCont, ~isnan(str2double(col1))); %A free-field continuation can contain numeric data
 col1      = strtrim(col1);
 idx       = or(idxCont, contains(col1, '*')); %Got to account for card names with large-field format
 cardNames = unique(col1(~idx), 'stable');     %Extract the data in the order it appears
@@ -346,12 +351,20 @@ cardNames = unique(col1(~idx), 'stable');     %Extract the data in the order it 
 %BUT, if the file has been written in free-field
 %(comma-seperated) format the 'cardNames' may not be valid so
 %we need to trim all text after (and including) the comma.
-idx = contains(cardNames, ',');
-ind = strfind(cardNames , ','); %TODO : Investigate what is quicker. Could do cellfun(@isemtpy, ind) to get logical index 'idx'
-cardNames(idx) = arrayfun(@(i) cardNames{i}(1 : ind{i} - 1), find(idx), 'Unif', false);
+% idxComma = contains(cardNames, ',');
+% indComma = strfind(cardNames , ','); %TODO : Investigate what is quicker. Could do cellfun(@isemtpy, ind) to get logical index 'idx'
+% cardNames(idxComma) = arrayfun(@(i) cardNames{i}(1 : indComma{i} - 1), find(idxComma), 'Unif', false);
+%   - Do the same for col1
+% idx_ = and(contains(col1, ','), ~idx);
+% ind_ = strfind(col1, ',');
+% col1(idx_) = arrayfun(@(i) col1{i}(1 : ind_{i} - 1), find(idx_), 'Unif', false);
+%Remove any numeric data that is in the first column due to free-field
+%format
+%cardNames = cardNames(isnan(str2double(cardNames)));
 
 %Now get the actual unique names
 cardNames = strtrim(unique(cardNames, 'stable'));
+cardNames = cardNames(~cellfun(@isempty, cardNames));
 
 %Loop through cards - create objects & populate properties
 for iCard = 1 : numel(cardNames)
@@ -363,7 +376,7 @@ for iCard = 1 : numel(cardNames)
     %line of the card.
     %idx = and(contains(col1, cn), ~idxCont);
     idx   = and(or(strcmp(col1, cn), strcmp(col1, [cn, '*'])), ~idxCont);
-    %                 idx   = and(contains(col1, cn), ~idxCont);
+    %idx   = and(contains(col1, cn), ~idxCont);
     ind   = find(idx == true);
     nCard = nnz(idx);
     
