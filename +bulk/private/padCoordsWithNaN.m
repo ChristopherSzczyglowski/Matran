@@ -9,8 +9,8 @@ function x = padCoordsWithNaN(x)
 % See also:
 %
 %
-% Author    : Christopher Szczyglowski Email     :
-% chris.szczyglowski@gmail.com Timestamp : 08-Mar-2020 22:49:00
+% Author    : Christopher Szczyglowski 
+% Email     : chris.szczyglowski@gmail.com Timestamp : 08-Mar-2020 22:49:00
 %
 % Copyright (c) 2020 Christopher Szczyglowski All Rights Reserved
 %
@@ -20,18 +20,23 @@ function x = padCoordsWithNaN(x)
 %
 % <end_of_pre_formatted_H1>
 
-%Convert to cell so we retain the pairs of coordinates in the
-%correct order
-x  = num2cell(x, 1);
+x = [x ; nan(1, numel(x(1, :)))];
+x = x(:);
 
-%Preallocate
-x_ = cell(1, 2 * numel(x));
-
-%Assign the data and NaN terms
-x_(1 : 2 : end - 1) = x;
-x_(2 : 2 : end)     = {nan};
-
-%Return a column vector
-x = vertcat(x_{:});
+% return
+% 
+% %Convert to cell so we retain the pairs of coordinates in the
+% %correct order
+% x  = num2cell(x, 1);
+% 
+% %Preallocate
+% x_ = cell(1, 2 * numel(x));
+% 
+% %Assign the data and NaN terms
+% x_(1 : 2 : end - 1) = x;
+% x_(2 : 2 : end)     = {nan};
+% 
+% %Return a column vector
+% x = vertcat(x_{:});
 
 end
