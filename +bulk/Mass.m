@@ -51,7 +51,7 @@ classdef Mass < bulk.BulkData
             end
             coords = coords(:, obj.NodesIndex);
             
-            if p.Results.AddOffset %Add offset
+            if p.Results.AddOffset && isprop(obj, 'X') %Add offset
                 coords = coords + obj.X;
             end
             
