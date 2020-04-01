@@ -609,12 +609,20 @@ function tf = iscont(str)
 % the first 8 characters of 'str' or if str is an array of
 % blanks.
 
-if isequal(str(1), '*') || contains(str(1:8), '+') || ...
-        isequal(str(1:8), blanks(8))
-    tf = true;
-else
-    tf = false;
+tf = true;
+
+n    = min(numel(str), 8);
+str_ = str(1 : n);
+
+if isempty(str_) 
+    return
 end
+if isequal(str_(1), '*') || contains(str_, '+') || ...
+        isequal(str_, blanks(n))
+    return
+end
+
+tf = false;
 
 end
 function propData = extractCardData(cardData)
