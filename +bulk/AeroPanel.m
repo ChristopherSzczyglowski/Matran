@@ -102,17 +102,15 @@ classdef AeroPanel < bulk.BulkData
                 %the panels in the spanwise and chordwise directions.
                 
                 if isempty(obj.SpanDivision)
-                    error('Check this');
-                    dSpan   = abs(obj.X4(2, :) - obj.X1(2, :)) ./ obj.NSPAN;
+                    dSpan   = 1 ./ obj.NSPAN;
                     etaSpan = arrayfun(@(ds) unique([0 : ds :  1, 1]), dSpan, 'Unif', false);
                 else
                     etaSpan = obj.SpanDivision.Di;
                 end
                 
                 if isempty(obj.ChordDivision)
-                    %error('Check this');
-                    dSpan   = 1 ./ obj.NCHORD;
-                    etaChord = arrayfun(@(ds) unique([0 : ds :  1, 1]), dSpan, 'Unif', false);                    
+                    dChord   = 1 ./ obj.NCHORD;
+                    etaChord = arrayfun(@(ds) unique([0 : ds :  1, 1]), dChord, 'Unif', false);                    
                 else
                     etaChord = obj.ChordDivision.Di;
                 end
