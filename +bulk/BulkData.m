@@ -458,31 +458,43 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             b4List = dataNames(1 : ind(1) - 1);
             nb4    = numel(b4List);
             if numel(dataNames) > ind(end) %Is there any data after the list?
-                error('Update code to extract bulk data after a list');
                 afterList = dataNames(ind(end) + 1 : end);
-                nAfter = numel(afterList);
+                nAfter    = numel(afterList);
+            else
+                nAfter = 0;
             end            
+                 
+            %Pass this subset on to the normal data parsing method
+            BulkMeta_ = struct( ...
+                'Names'  , {dataNames(1 : nb4)} , ...
+                'Format' , {dataFormat(1 : nb4)}, ...
+                'Default', {BulkMeta.Default(1 : nb4)}, ...
+                'Bounds' , [lb(1 : nb4) ; ub(1 : nb4)]);
+            assignCardData(obj,  propData(1 : nb4), index, BulkMeta_);
             
-            %Parse the data before the list starts
-            dat     = propData(1 : nb4);
-            strData = propData(nb4 + 1 : end);
-            
-            %Convert to correct data types
-            idx       = or(dataFormat(1 : nb4) == 'i', dataFormat(1 : nb4) == 'r');
-            dat(idx)  = num2cell(str2double(dat(idx)));
-            dat(~idx) = cellfun(@(x) {x}, dat(~idx), 'Unif', false);
-            %set(obj, b4List, dat);                           
-            for ii = 1 : numel(b4List) %Assign to the object 
-                obj.(dataNames{ii})(:, index) = vertcat(dat{lb(ii) : ub(ii)});
-            end
-            
+%             %Convert to correct data types
+%             idx       = or(dataFormat(1 : nb4) == 'i', dataFormat(1 : nb4) == 'r');
+%             dat(idx)  = num2cell(str2double(dat(idx)));
+%             dat(~idx) = cellfun(@(x) {x}, dat(~idx), 'Unif', false);
+%             %set(obj, b4List, dat);
+%             for ii = 1 : numel(b4List) %Assign to the object
+%                 obj.(dataNames{ii})(:, index) = vertcat(dat{lb(ii) : ub(ii)});
+%             end
+
+            %Parse the list data
+            strData = propData(nb4 + 1 : end - nAfter);
+            endData = propData(end - nAfter + 1 : end);
+
+            %Remove blanks (Needed for all TABLE bulk data entries)
+            strData = strData(~cellfun(@isempty, strData));
+
             if isempty(strData) %Escape route
                 return
             end
-            
+
             %Parse the list data
-            propData = i_parseListData(strData, obj.CardName);            
-            
+            propData = i_parseListData(strData, obj.CardName);
+
             function propData = i_parseListData(strData, nam)
                 %i_parseListData Converts all the data in 'strData' into
                 %type double. If the keywork 'THRU' is found then it is
@@ -490,16 +502,14 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
                 %
                 % TODO - Update this so it can handle lists of strings.
                 
-                strData(cellfun(@isempty, strData)) = [];
-                
                 %Convert to numeric data & check for NaN (e.g. char data)
-                propData = str2double(strData);                
+                propData = str2double(strData);
                 idx_     = isnan(propData);
                 propData = num2cell(propData);
                 
                 %Populate intermediate ID numbers
                 if any(idx_)
-                                        
+                    
                     %Check for "THRU" keyword
                     nanData = strData(idx_);
                     
@@ -522,16 +532,16 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
                 end
                 
             end
-                       
+            
             %Split into sets of 'numel(listVar)'
             nListVar = numel(listNames);
-            if nListVar > 1
-                error('Check code runs and use row vectors not column vectors.');
-            end
+%             if nListVar > 1
+%                 error('Check code runs and use row vectors not column vectors.');
+%             end
             propData = [propData{:}];
             nData    = numel(propData);
             propData = reshape(propData, [nData / nListVar, nListVar]);
-            propData = num2cell(propData, 1);
+            propData = num2cell(propData, 2);
             
             %Assign to object
             for ii = 1 : numel(listNames)
