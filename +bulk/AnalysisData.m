@@ -3,6 +3,9 @@ classdef AnalysisData < bulk.BulkData
     %finite element analysis.
     %    
     % Valid Bulk Data Types:
+    %   - 'AERO'
+    %   - 'FLUTTER'
+    %   - 'SPLINE2'
     %   - 'EIGR'  TODO
     %   - 'EIGRL'
     
@@ -42,6 +45,6 @@ classdef AnalysisData < bulk.BulkData
             
         end
     end
-    
+        
 end
 
