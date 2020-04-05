@@ -502,13 +502,17 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
                 %
                 % TODO - Update this so it can handle lists of strings.
                 
-                %Convert to numeric data & check for NaN (e.g. char data)
-                propData = str2double(strData);
-                idx_     = isnan(propData);
-                propData = num2cell(propData);
+                %Strip 'ENDT' from the list if it is present
+                strData(contains(strData, 'ENDT')) = [];
                 
+                %Convert to numeric data & check for NaN (e.g. char data)
+                propData = str2double(strData)';
+                idx_     = isnan(propData);
+                                
                 %Populate intermediate ID numbers
                 if any(idx_)
+                    
+                    propData = num2cell(propData);
                     
                     %Check for "THRU" keyword
                     nanData = strData(idx_);
@@ -529,19 +533,19 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
                         propData{ind_} = ((propData{ind_ - 1} + 1) : ...
                             1 : (propData{ind_ + 1} - 1));
                     end
+                    propData = [propData{:}];
                 end
                 
             end
             
             %Split into sets of 'numel(listVar)'
-            nListVar = numel(listNames);
-            propData = [propData{:}];
-            nData    = numel(propData);
+            nListVar = numel(listNames);  
             if nListVar > 1
-                propData = reshape(propData, [nData / nListVar, nListVar]);
+                propData = arrayfun(@(ii) propData(ii : nListVar : end), 1 : nListVar, 'Unif', false);
+            else
+                propData = num2cell(propData, 2);
             end
-            propData = num2cell(propData, 2);
-                        
+            
             %Assign to object
             for ii = 1 : numel(listNames)
                obj.(listNames{ii}){index} = propData{ii}; 
