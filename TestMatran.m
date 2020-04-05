@@ -47,7 +47,11 @@ classdef TestMatran < matlab.unittest.TestCase
             '\doc\dynamics\bd03bar1.dat', ... %simple beam
             '\doc\dynamics\bd03car.dat' , ... %car frame model
             '\doc\dynamics\bd03fix.dat' , ... %test fixture
-            'aero\ha75b.dat'}; %airplane
+            'aero\ha75b.dat'            , ... %BAH jet transport PK flutter analysis
+            'aero\ha76b.dat'            , ... %BAH jet transport enforced aileron displacement
+            'aero\ha76c.dat'            , ... %BAH jet transport random gust 
+            'aero\ha75f.dat'            , ... %NASA TN D-1824 PK flutter analysis
+            '\aero\ha145z.dat'}; %NASA TN D-1824 
         TextImportFiles = { ...
             'uob_HARW\wing_model_R.bdf'}; %HARW wing
     end
