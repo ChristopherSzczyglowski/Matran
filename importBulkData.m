@@ -702,6 +702,10 @@ else
     
 end
 
+%Check for scientific notation without 'E'
+propData = i_parseScientificFormat(propData, '+');
+propData = i_parseScientificFormat(propData, '-');
+
     function propData = i_splitDataByColWidth(strData, colWidth)
         %i_splitDataByColWidth Splits the character array 'strData'
         %into a cell string array of character vectors with maximum
@@ -735,6 +739,17 @@ end
             propData = [propData ; cellstr(endData)];
         end
         
+    end
+
+    function propData = i_parseScientificFormat(propData, tok)
+        %i_parseScientificFormat Replaces any '-' or '+' data with 'E+' and
+        %'E-' respectively. 
+        %
+        % Does not replace these tokens if they appear at the start of the
+        % line. e.g. denoting a negative number instead of using scientific
+        % format.
+        idx_ = and(and(contains(propData, tok), ~contains(propData, 'E')),~startsWith(propData, tok));
+        propData(idx_) = strrep(propData(idx_), tok, ['E', tok]);
     end
 
 end
@@ -795,8 +810,12 @@ BulkDataMask.CQUAD4  = 'bulk.Shell';
 BulkDataMask.CTRIA3  = 'bulk.Shell';
 BulkDataMask.AEFACT  = 'bulk.List';
 BulkDataMask.SET1    = 'bulk.List';
+% BulkDataMask.ASET1   = 'bulk.List';
 BulkDataMask.PAERO1  = 'bulk.List';
 BulkDataMask.FLFACT  = 'bulk.List';
+BulkDataMask.TABDMP1 = 'bulk.List';
+BulkDataMask.TABLED1 = 'bulk.List';
+BulkDataMask.TABRND1 = 'bulk.List';
 BulkDataMask.CONM1   = 'bulk.Mass';
 BulkDataMask.CONM2   = 'bulk.Mass';
 BulkDataMask.CMASS1  = 'bulk.ScalarElement';
@@ -809,7 +828,7 @@ BulkDataMask.AERO    = 'bulk.AnalysisData';
 BulkDataMask.EIGR    = 'bulk.AnalysisData';
 BulkDataMask.EIGRL   = 'bulk.AnalysisData';
 BulkDataMask.FLUTTER = 'bulk.AnalysisData';
-BulkDataMask.SPLINE2 = 'bulk.AnalysisData';
+BulkDataMask.FREQ1   = 'bulk.AnalysisData';
 
 end
 

@@ -422,8 +422,8 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             dataFormat(idx) = '';
             
             %Check for scientific notation without 'E'
-            idx = and(contains(propData, '+'), ~contains(propData, 'E'));
-            propData(idx) = strrep(propData(idx), '+', 'E+');
+            %idx = and(contains(propData, '+'), ~contains(propData, 'E'));
+            %propData(idx) = strrep(propData(idx), '+', 'E+');
             
             %Convert integer & real data to numeric data
             numIndex   = or(dataFormat == 'i', dataFormat == 'r');
@@ -478,15 +478,6 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
                 'Bounds' , [lb(1 : nb4) ; ub(1 : nb4)]);
             assignCardData(obj,  propData(1 : nb4), index, BulkMeta_);
             
-%             %Convert to correct data types
-%             idx       = or(dataFormat(1 : nb4) == 'i', dataFormat(1 : nb4) == 'r');
-%             dat(idx)  = num2cell(str2double(dat(idx)));
-%             dat(~idx) = cellfun(@(x) {x}, dat(~idx), 'Unif', false);
-%             %set(obj, b4List, dat);
-%             for ii = 1 : numel(b4List) %Assign to the object
-%                 obj.(dataNames{ii})(:, index) = vertcat(dat{lb(ii) : ub(ii)});
-%             end
-
             %Parse the list data
             strData = propData(nb4 + 1 : end - nAfter);
             endData = propData(end - nAfter + 1 : end);
