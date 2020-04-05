@@ -8,11 +8,13 @@ classdef List < bulk.BulkData
     %   - PAERO1
     %   - FLFACT
     %   - TABDMP1
+    %   - TABLED1
     
     properties (Constant)
         ValidDampingType = {'G', 'CRIT', 'Q'};
+        ValidAxisType    = {'LINEAR', 'LOG'};
     end
-    
+     
     methods % construction
         function obj = List(varargin)
             
@@ -45,6 +47,12 @@ classdef List < bulk.BulkData
                 'PropDefault', {''   , 'G'   , ''  , ''  , ''}     , ...
                 'ListProp'   , {'Fi', 'Gi'}               , ...
                 'SetMethod'  , {'TYPE', @validateTYPE});
+            addBulkDataSet(obj, 'TABLED1', ...
+                'BulkProps'  , {'TID', 'XAXIS' , 'YAXIS' , 'Xi', 'Yi'}, ...
+                'PropTypes'  , {'i'  , 'c'     , 'c'     , 'r' , 'r'} , ...
+                'PropDefault', {''   , 'LINEAR', 'LINEAR', 0   , 0}   , ...
+                'ListProp'   , {'Xi', 'Yi'}, ...
+                'SetMethod'  , {'XAXIS', @validateAxisType, 'YAXIS', @validateAxisType});
             
             varargin = parse(obj, varargin{:});
             preallocate(obj);
@@ -53,16 +61,21 @@ classdef List < bulk.BulkData
         end
     end
     
-    methods % validation
+    methods % validation TODO - Pass in the valid tokens as an extra argument!!
         function validateTYPE(obj, val, prpName, varargin)
+            validateThenSetString(obj, val, prpName, obj.ValidDampingType);            
+        end
+        function validateAxisType(obj, val, prpName, varargin)
+            validateThenSetString(obj, val, prpName, obj.ValidAxisType);
+        end
+        function validateThenSetString(obj, val, prpName, toks)
             val = upper(val);
             msg = sprintf(['Expected ''%s'' to be a cell array ', ...
                 'of strings with each element being one of the following '  , ...
-                'tokens:\n\n\t- %s\n\n'], prpName, strjoin(obj.ValidDampingType, ', '));
+                'tokens:\n\n\t- %s\n\n'], prpName, strjoin(toks, ', '));
             assert(iscellstr(val), msg); %#ok<ISCLSTR>
-            assert(all(ismember(val, obj.ValidDampingType)), msg);
-            obj.TYPE = val;
-            
+            assert(all(ismember(val, toks)), msg);
+            obj.(prpName) = val;      
         end
     end
     
