@@ -1,6 +1,12 @@
 function hg = drawNodes(coords, hParent, varargin)
 %drawNodes Draws a set of node objects and returns the handle.
 
+hg = [];
+
+if isempty(coords)
+    return
+end
+
 hg  = line(hParent, ...
     'XData', coords(1, :), ...
     'YData', coords(2, :), ...

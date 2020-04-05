@@ -86,34 +86,56 @@ classdef ScalarElement < bulk.BulkData
             %TODO - Add an option to draw grounded elements with a
             %connection to the origin
             
-            coords1 = getDrawCoords(obj.Node1, obj.DrawMode); 
-            coords2 = getDrawCoords(obj.Node2, obj.DrawMode);
+            %Grab the node coordinates            
+            if isempty(obj.Node1)
+                coords1 = zeros(3, 1);
+            else
+                coords1 = getDrawCoords(obj.Node1, obj.DrawMode);
+            end
+            if isempty(obj.Node2)
+                coords2 = zeros(3, 1);
+            else
+                coords2 = getDrawCoords(obj.Node2, obj.DrawMode);
+            end
             
             %Check index for grounded terminals
             ind  = [obj.Node1Index ; obj.Node2Index];
             idx  = ~any(ind == 0);
             indG = ind(:, ~idx); %grounded
+            if isempty(indG)
+                %If Node1 or Node2 is not defined then we end up with a 1x0
+                %empty array which causes the indexing to fail.
+                indG = double.empty(2, 0);
+            end
             
             %Grab coordinates
             % - Grounded elements will be plotted as marker at the opposite
             %   node to the grounded node. e.g. if node 1 is grounded then
             %   we plot the marker at node 2 coordinates
             x  = [coords1(:, indG(2, indG(2, :) ~= 0)), coords2(:, indG(1, indG(1, :) ~= 0))];
-            xA = coords1(:, obj.Node1Index(idx));
-            xB = coords2(:, obj.Node2Index(idx));  
+            if isempty(obj.Node1Index)
+                xA = double.empty(3, 0);
+            else
+                xA = coords1(:, obj.Node1Index(idx));
+            end
+            if isempty(obj.Node2Index)
+                xB = double.empty(3,0);
+            else
+                xB = coords2(:, obj.Node2Index(idx));
+            end
             
-            hg    = gobjects(1, 2);
-            hg(1) = drawNodes(x, hAx, ...
+            hg{1} = drawNodes(x, hAx, ...
                 'Marker'         , 's', ...
                 'MarkerFaceColor', 'b', ...
                 'Tag'            , 'Scalar Element');
-            hg(2) = drawLines(xA, xB, hAx, ...
+            hg{2} = drawLines(xA, xB, hAx, ...
                 'Color'          , 'b' , ...
                 'LineStyle'      , '--', ...
                 'Marker'         , 's' , ...
                 'MarkerFaceColor', 'b' , ...
                 'MarkerEdgeColor', 'k' , ...
                 'Tag'            , 'Scalar Element');
+            hg = horzcat(hg{:});
             
         end
     end
