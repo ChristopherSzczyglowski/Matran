@@ -197,8 +197,8 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
                 bulkProp = con(1 : 3 : end);
                 bulkType = con(2 : 3 : end);
                 dynProps = con(3 : 3 : end);
-                addDynamicProp(obj, dynProps);
-                addDynamicProp(obj, strcat(dynProps, 'Index'));
+                %addDynamicProp(obj, dynProps);
+                %addDynamicProp(obj, strcat(dynProps, 'Index'));
                 
                 Connections = struct('Prop', bulkProp, 'Type', bulkType, 'DynProp', dynProps);                
             end
@@ -333,8 +333,14 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             assert(all(cellfun(@isvarname, prpNames)), ['All ''BulkProps'' ', ...
                 'must be a valid variable name. i.e. Must satisfy the ', ...
                 'function @isvarname']);
-            addDynamicProp(obj, prpNames);
-            dProp = getDynamicProp(obj, prpNames);
+            dProp = addDynamicProp(obj, prpNames);
+            
+            %Add the dynamic properties associated with 'Connections'
+            if ~isempty(BulkDataInfo.Connections)
+                dynProps = {BulkDataInfo.Connections.DynProp};
+                addDynamicProp(obj, dynProps);
+                addDynamicProp(obj, strcat(dynProps, 'Index'));
+            end
             
             %Hack the set methods for the dynamic properties using
             %combination of 'PreSet' & 'PostSet' listeners and a custom set
