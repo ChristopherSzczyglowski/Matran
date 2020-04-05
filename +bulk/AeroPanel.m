@@ -29,15 +29,11 @@ classdef AeroPanel < bulk.BulkData
             %drawElement Draws the AeroPanel object as a single patch
             %object and returns a single graphics handle for all AeroPanels
             %in the collection.
-            
-            if obj.NumBulk > 1
-                error('Check code runs for multiple panel sets.');
-            end
-            
+                        
             hg = [];
             
-            %Grab the panel data
-            PanelData = getPanelData(obj);            
+            %Grab the panel data      
+            PanelData = getPanelData(obj);             
             if isempty(PanelData)
                 return
             end
@@ -50,6 +46,9 @@ classdef AeroPanel < bulk.BulkData
             %Plot
             hg = patch(hAx, x, y, z, ...
                 'Tag', 'Aero Panels');
+            plot3(hAx, ...
+                PanelData.Centre(:, 1), PanelData.Centre(:, 2), PanelData.Centre(:, 3), ...
+                'LineStyle', 'none', 'Marker', 'o', 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'k');
             
         end
     end
@@ -57,12 +56,12 @@ classdef AeroPanel < bulk.BulkData
     methods % helper functions 
         function PanelData = getPanelData(obj)
             %getPanelData Calculates the panel coordinates.
+                                  
+            PanelData = repmat(struct('Coords', [], 'Centre', []), [1, obj.NumBulk]);
             
-            if numel(obj.EID) > 1
-                error('Check code works for multiple sets of CAERO1 panels.');
+            if isempty(PanelData)
+                return
             end
-           
-            PanelData = [];
             
             %Parse
             if any(obj.CP ~= 0)
@@ -72,64 +71,59 @@ classdef AeroPanel < bulk.BulkData
                 warning('Panel vertices could not be defined.');
                 return
             end
-            
-            %Get the corner coordinates
-            xC = [ ...
-                [obj.X1(1, :) ; obj.X1(1, :) + obj.X12], ...
-                [obj.X4(1, :) ; obj.X4(1, :) + obj.X43]];
-            yC = [ ...
-                [obj.X1(2, :) ; obj.X1(2, :)], ...
-                [obj.X4(2, :) ; obj.X4(2, :)]];
-            zC = [ ...
-                [obj.X1(3, :) ; obj.X1(3, :)], ...
-                [obj.X4(3, :) ; obj.X4(3, :)]];
-            
-            %Check how panel boundaries are defined
-            if isempty(obj.NSPAN) && isempty(obj.LSPAN)
+            if any(all([obj.NSPAN == 0 ; obj.LSPAN == 0]))
                 warning(['Panel increments in spanwise direction ', ...
                     'could not be defined.']);
                 return
             end
-            if isempty(obj.NCHORD) && isempty(obj.LCHORD)
+            if any(all([obj.NCHORD == 0 ; obj.LCHORD == 0]))
                 warning(['Panel increments in chordwise direction ', ...
                     'could not be defined.']);
                 return
             end
-            [etaSpan, etaChord] = i_getPanelBoundaries(obj);
             
-            function [etaSpan, etaChord] = i_getPanelBoundaries(obj)
-                %i_getPanelBoundaries Returns the normalised increments for
-                %the panels in the spanwise and chordwise directions.
+            %Loop through the data and generate panel coordinates
+            for ii = 1 : obj.NumBulk
                 
-                if isempty(obj.SpanDivision)
-                    dSpan   = 1 ./ obj.NSPAN;
-                    etaSpan = arrayfun(@(ds) unique([0 : ds :  1, 1]), dSpan, 'Unif', false);
+                %Get the corner coordinates
+                xC = [ ...
+                    [obj.X1(1, ii) ; obj.X1(1, ii) + obj.X12(ii)], ...
+                    [obj.X4(1, ii) ; obj.X4(1, ii) + obj.X43(ii)]];
+                yC = [ ...
+                    [obj.X1(2, ii) ; obj.X1(2, ii)], ...
+                    [obj.X4(2, ii) ; obj.X4(2, ii)]];
+                zC = [ ...
+                    [obj.X1(3, ii) ; obj.X1(3, ii)], ...
+                    [obj.X4(3, ii) ; obj.X4(3, ii)]];  
+                
+                %Get the panel divisions
+                if obj.LSPAN(ii) == 0
+                    dSpan   = 1 / obj.NSPAN(ii);
+                    etaSpan = unique([0 : dSpan :  1, 1]);
                 else
-                    etaSpan = obj.SpanDivision.Di;
-                end
-                
-                if isempty(obj.ChordDivision)
-                    dChord   = 1 ./ obj.NCHORD;
-                    etaChord = arrayfun(@(ds) unique([0 : ds :  1, 1]), dChord, 'Unif', false);                    
+                    etaSpan = obj.SpanDivision.Di{obj.SpanDivisionIndex(ii)};
+                end                
+                if obj.LCHORD(ii)== 0
+                    dChord   = 1 / obj.NCHORD(ii);
+                    etaChord = unique([0 : dChord : 1, 1]);                   
                 else
-                    etaChord = obj.ChordDivision.Di;
+                    etaChord = obj.ChordDivision.Di{obj.ChordDivisionIndex(ii)};
+                end                                
+                if iscolumn(etaSpan) || iscolumn(etaChord)
+                    error('Why is this happening?'); %TODO remove this once we know this will never happen                   
                 end
+                                
+                %Panel coordinates
+                [xDat, yDat, zDat] = i_chordwisePanelCoords(xC, yC, zC, etaSpan, etaChord);
                 
-                etaChord = etaChord{1};
-                etaSpan  = etaSpan{1};
+                %Define panels [5, nPanel, 3]
+                PanelData(ii).Coords = i_panelVerticies(xDat, yDat, zDat, etaChord, etaSpan);
                 
-                if iscolumn(etaSpan)
-                    etaSpan = etaSpan';
-                end
-                if iscolumn(etaChord)
-                    etaChord = etaChord';
-                end
+                %Calculate centre of panel
+                PanelData(ii).Centre  = permute(mean(PanelData(ii).Coords(:, 1 : 4, :), 2), [1, 3, 2]);
                 
             end
-            
-            %Panel coordinates
-            [xDat, yDat, zDat] = i_chordwisePanelCoords(xC, yC, zC, etaSpan, etaChord);
-            
+                        
             function [xDat, yDat, zDat] = i_chordwisePanelCoords(x, y, z, etaSpan, etaChord)
                 %i_chordwisePanelCoords : Defines the (x,y,z) coordinates
                 %of each panel corner. Should return 3 matricies (X,Y,Z) of
@@ -156,13 +150,10 @@ classdef AeroPanel < bulk.BulkData
                 
             end
           
-            %Define panels [5, nPanel, 3]
-            PanelData.Coords = i_panelVerticies(xDat, yDat, zDat, etaChord, etaSpan);
-            
             function panel = i_panelVerticies(xDat, yDat, zDat, etaChord, etaSpan)
                 %TODO - Vectorise this!
                 
-                nChord = numel(etaChord) - 1;
+                nChord = numel(etaChord) - 1; 
                 nSpan  = numel(etaSpan) - 1;
                 
                 %Preallocate
@@ -199,11 +190,16 @@ classdef AeroPanel < bulk.BulkData
             end
             
             %Define panel numbers
-            %val.PanelID = obj.EID + [0 : obj.NumPanels - 1]';
+            pn = arrayfun(@(ii) obj.EID(ii) + [0 : size(PanelData(ii).Centre, 1) - 1], ...
+                1 : numel(PanelData), 'Unif', false);
+            pn = horzcat(pn{:})';
             
-            %Calculate centre of panel
-            PanelData.Centre  = squeeze(mean(PanelData.Coords(:, 1 : 4, :), 2));            
-            
+            %Combine into a single set 
+            PanelData = struct( ...
+                'Coords', vertcat(PanelData.Coords), ...
+                'Centre', vertcat(PanelData.Centre), ...
+                'IDs'   , pn);
+                                
         end
     end
     
