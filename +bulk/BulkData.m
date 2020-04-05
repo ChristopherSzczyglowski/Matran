@@ -535,14 +535,13 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             
             %Split into sets of 'numel(listVar)'
             nListVar = numel(listNames);
-%             if nListVar > 1
-%                 error('Check code runs and use row vectors not column vectors.');
-%             end
             propData = [propData{:}];
             nData    = numel(propData);
-            propData = reshape(propData, [nData / nListVar, nListVar]);
+            if nListVar > 1
+                propData = reshape(propData, [nData / nListVar, nListVar]);
+            end
             propData = num2cell(propData, 2);
-            
+                        
             %Assign to object
             for ii = 1 : numel(listNames)
                obj.(listNames{ii}){index} = propData{ii}; 
