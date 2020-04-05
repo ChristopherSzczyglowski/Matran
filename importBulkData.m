@@ -702,6 +702,9 @@ else
     
 end
 
+%Strip blank spaces so we can parse data regardless of indentation
+propData = strtrim(propData);
+
 %Check for scientific notation without 'E'
 propData = i_parseScientificFormat(propData, '+');
 propData = i_parseScientificFormat(propData, '-');
