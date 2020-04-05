@@ -7,6 +7,11 @@ classdef List < bulk.BulkData
     %   - SET1
     %   - PAERO1
     %   - FLFACT
+    %   - TABDMP1
+    
+    properties (Constant)
+        ValidDampingType = {'G', 'CRIT', 'Q'};
+    end
     
     methods % construction
         function obj = List(varargin)
@@ -34,6 +39,12 @@ classdef List < bulk.BulkData
                 'PropTypes'  , {'i'  , 'r' }, ...
                 'PropDefault', {0    , 0   }, ...
                 'ListProp'   , {'Fi'});
+            addBulkDataSet(obj, 'TABDMP1', ...
+                'BulkProps'  , {'TID', 'TYPE', 'Fi', 'Gi', 'Token'}, ...
+                'PropTypes'  , {'i'  , 'c'   , 'r' , 'r' , 'c'}    , ...
+                'PropDefault', {''   , 'G'   , ''  , ''  , ''}     , ...
+                'ListProp'   , {'Fi', 'Gi'}               , ...
+                'SetMethod'  , {'TYPE', @validateTYPE});
             
             varargin = parse(obj, varargin{:});
             preallocate(obj);
@@ -41,6 +52,19 @@ classdef List < bulk.BulkData
             
         end
     end
-
+    
+    methods % validation
+        function validateTYPE(obj, val, prpName, varargin)
+            val = upper(val);
+            msg = sprintf(['Expected ''%s'' to be a cell array ', ...
+                'of strings with each element being one of the following '  , ...
+                'tokens:\n\n\t- %s\n\n'], prpName, strjoin(obj.ValidDampingType, ', '));
+            assert(iscellstr(val), msg); %#ok<ISCLSTR>
+            assert(all(ismember(val, obj.ValidDampingType)), msg);
+            obj.TYPE = val;
+            
+        end
+    end
+    
 end
 
