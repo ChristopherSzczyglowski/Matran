@@ -3,12 +3,12 @@ classdef AnalysisData < bulk.BulkData
     %finite element analysis.
     %    
     % Valid Bulk Data Types:
-    %   - 'AERO'
-    %   - 'FLUTTER'
-    %   - 'SPLINE1'
-    %   - 'SPLINE2'
+    %   - 'AERO'    
     %   - 'EIGR' 
     %   - 'EIGRL'
+    %   - 'FLUTTER'
+    %   - 'FREQ1'
+    %   - 'RANDPS'
     
     methods % construction
         function obj = AnalysisData(varargin)
@@ -41,6 +41,11 @@ classdef AnalysisData < bulk.BulkData
                 'PropTypes'  , {'i'  , 'r' , 'r' , 'i'}  , ...
                 'PropDefault', {''   , ''  , ''  , 0}    , ...                
                 'AttrList'   , {'F1', {'nonnegative'}, 'DF', {'nonnegative'}});
+            addBulkDataSet(obj, 'RANDPS', ...
+                'BulkProps'  , {'SID', 'J', 'K', 'X', 'Y', 'TID'}, ...
+                'PropTypes'  , {'i'  , 'i', 'i', 'r', 'r', 'i'}  , ...
+                'PropDefault', {''   , '' , '' , 0  , 0  , ''}   , ...                
+                'Connections', {'TID', 'bulk.List', 'Table'});
             varargin = parse(obj, varargin{:});
             preallocate(obj);
             
