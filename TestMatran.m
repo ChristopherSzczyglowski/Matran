@@ -145,6 +145,10 @@ classdef TestMatran < matlab.unittest.TestCase
             %data from input files and returns a list of all bulk data
             %types that were not recognised.
             %
+            % Detailed Description:
+            %   - Uses a plugin to record additional data in the 'Details'
+            %     structure of the TestResults object.
+            %
             % See also: https://www.mathworks.com/help/matlab/matlab_prog/write-plugin-to-add-data-to-test-results.html
             
             return
@@ -229,20 +233,23 @@ classdef TestMatran < matlab.unittest.TestCase
             %text file contained in the Nastran Test Problem Library (TPL).
             
             %If the location of the Test Problem Library is unset then quit
-            tpl = obj.PathToNastranTPL;
-            if isempty(tpl)
+            TPLTextImportFiles = getFilePath(obj, TPLTextImportFiles, 'tpl');
+            if isempty(TPLTextImportFiles)
+                warning(['Update the ''PathToNastranTPL'' preference ', ...
+                    'to access files in the Nastran Test Problem Library']);                
                 return
             end
             
-            importThenDraw(obj, fullfile(tpl, TPLTextImportFiles))
+            importThenDraw(obj, TPLTextImportFiles);
         end
         function importFromTextFile(obj, TextImportFiles)
             %importFRomTPLTextFile Attempts to import a FE model from a
             %text file using the standard Nastran input format.
             
             %Assume the file is contained in the 'models' directory
-            importThenDraw(obj, fullfile(pwd, 'models', TextImportFiles));
-        end
+            TextImportFiles = getFilePath(obj, TextImportFiles, 'model');
+            importThenDraw(obj, TextImportFiles);
+        end        
     end
     methods (TestMethodTeardown)
         function closeFigures(obj)
@@ -251,7 +258,29 @@ classdef TestMatran < matlab.unittest.TestCase
             end
         end
     end
-    methods (Access = private)
+    methods % getFilePath
+       function filename = getFilePath(obj, filename, type)
+            %getFilePath Helper method for providing the full-file path
+            %based on whether the file is part of the Nastran TPL or is
+            %pacakged in the 'models' subdirectory.
+            switch lower(type)
+                case 'tpl'
+                    loc = obj.PathToNastranTPL;
+                    if isempty(loc)
+                        filename = [];
+                        return
+                    end                    
+                case 'model'
+                    %loc = fileparts(matlab.desktop.editor.getActiveFilename);
+                    loc = fileparts(mfilename('fullpath'));
+                    loc = fullfile(loc, 'models');
+                otherwise 
+                    validatestring(filename, {'tpl', 'model'});
+            end            
+            filename = fullfile(loc, filename);
+        end 
+    end
+    methods (Access = private) % importThenDraw
         function importThenDraw(obj, filename)
             %importThenDraw Imports the model from the Nastran text file
             %'filename' and draws the model.
