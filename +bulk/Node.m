@@ -7,6 +7,7 @@ classdef Node < bulk.BulkData
     % Valid Bulk Data Types:
     %   - 'GRID'
     %   - 'SPOINT'
+    %   - 'EPOINT'
     
     %Store results data
     properties (Hidden = true)
@@ -33,13 +34,32 @@ classdef Node < bulk.BulkData
                 'AttrList'   , {'X', {'nrows', 3}}, ...
                 'SetMethod'  , {'PS', @validateDOF});
             addBulkDataSet(obj, 'SPOINT', ...
-                'BulkProps'  , {'ID'}, ...
-                'PropType'   , {'i'} , ...
-                'PropDefault', {''});
+                'BulkProps'  , {'IDi'}, ...
+                'PropType'   , {'i'}  , ...
+                'PropDefault', {''}   , ...
+                'ListProp'   , {'IDi'});
+            addBulkDataSet(obj, 'EPOINT', ...
+                'BulkProps'  , {'IDi'}, ...
+                'PropType'   , {'i'}  , ...
+                'PropDefault', {''}   , ...
+                'ListProp'   , {'IDi'});
             
             varargin = parse(obj, varargin{:});
             preallocate(obj);
             
+        end
+    end
+    
+    methods % assigning data during import
+        function assignListCardData(obj, propData, index, BulkMeta)
+            %assignListCardData 
+            
+            assignListCardData@bulk.BulkData(obj, propData, index, BulkMeta)
+            
+            %Stack all ID numbers for 'SPOINT' or 'EPOINT'
+            %   - Cell notation for list bulk data doers not work with the
+            %    'makeIndices' function for the 'bulk.FEModel' class.
+            obj.IDi = horzcat(obj.IDi{:});
         end
     end
     
@@ -48,10 +68,6 @@ classdef Node < bulk.BulkData
             %drawElement Draws the node objects as a discrete marker and
             %returns a single graphics handle for all the nodes in the
             %collection.
-            
-            if strcmp(obj.CardName, 'SPOINT')
-                error('Update the Node draw method to plot scalar points at the origin');
-            end
             
             if nargin < 3
                 mode = [];
@@ -83,7 +99,12 @@ classdef Node < bulk.BulkData
             X = nan(3, numel(obj));
             
             %Check if the object has any undeformed data
-            X_  = {obj.X};
+            if isprop(obj, 'X')
+                X_  = {obj.X};
+            else
+                %EPOINT and SPOINT are set to the origin coordinates
+                X_ = {zeros(3, obj.NumBulk)};
+            end
             idx = cellfun(@isempty, X_);
             if any(idx)
                 warning(['Some ''awi.fe.Node'' objects do not have '   , ...
