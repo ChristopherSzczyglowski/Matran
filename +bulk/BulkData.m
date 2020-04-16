@@ -27,9 +27,10 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
         CardName
         %Properties related to the bulk data entry
         BulkDataProps = struct( ...
-            'BulkName'   , {}, 'BulkProps', {}, 'PropTypes', {}, ...
-            'PropDefault', {}, 'PropMask' , {}, 'ListProp' , {}, ...
-            'Connections', {}, 'AttrList' , {}, 'SetMethod', {});
+            'BulkName'   , {}, 'BulkProps'  , {}, 'PropTypes', {}, ...
+            'PropDefault', {}, 'IDProp'     , {}, 'PropMask' , {}, ...
+            'ListProp'   , {}, 'Connections', {}, 'AttrList' , {}, ...
+            'SetMethod'  , {});
         %Number of bulk data entries in this object
         NumBulk
     end
@@ -127,6 +128,7 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             addParameter(p, 'BulkProps'  , [], @iscellstr);
             addParameter(p, 'PropTypes'  , [], @iscellstr);
             addParameter(p, 'PropDefault', [], @iscell);
+            addParameter(p, 'IDProp'     , '', @ischar);
             addParameter(p, 'PropMask'   , [], @iscell);
             addParameter(p, 'ListProp'   , {}, @iscellstr);
             addParameter(p, 'Connections', [], @iscell);
@@ -151,7 +153,14 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             idx = cellfun(@isvarname, prpNames);
             assert(all(idx), ['All properties defined in ''BulkProps'' must ', ...
                 'be valid variable names. The following property names did ' , ...
-                'not pass this assertion:\n\n\t%s\n'], strjoin(prpNames(~idx), ', '));            
+                'not pass this assertion:\n\n\t%s\n'], strjoin(prpNames(~idx), ', '));      
+            
+            %Deal with ID property
+            idPrp = p.Results.IDProp;
+            if ~isempty(idPrp)
+                assert(nnz(ismember(prpNames, idPrp)) == 1, ['Expected ', ...
+                    '''IDProp'' to match one and only one of the ''BulkProps''.']);
+            end
             
             %Deal with masked properties
             propMask = p.Results.PropMask;               
@@ -253,6 +262,7 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
                 'BulkProps'  , {prpNames}  , ....
                 'PropTypes'  , {prpTypes}  , ...
                 'PropDefault', {prpDefault}, ...
+                'IDProp'     , idPrp       , ...
                 'PropMask'   , {propMask}  , ...
                 'PropList'   , {propList}  , ...
                 'Connections', Connections , ...
@@ -352,7 +362,10 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             if ~isempty(dProp)
                 [dProp.SetObservable] = deal(true);
                 [dProp.SetMethod]     = deal(@cbStashDynPropVal);
-                dProp(1).GetMethod    = @cbGetBulkDataID;
+                idx = ismember(prpNames, BulkDataInfo.IDProp);
+                if any(idx)
+                    dProp(idx).GetMethod = @cbGetBulkDataID;
+                end
                 addlistener(obj, dProp, 'PreSet' , @cbStashDynPropName);
                 addlistener(obj, dProp, 'PostSet', @cbValidateDynProp);
             end
@@ -396,13 +409,6 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             %     importing bulk data from a text file (.bdf, .dat). The
             %     variable 'index' indicates which element of the object
             %     bulk data will be assigned during this function.
-            %
-            % FIXME - This is probably overly complex but I'm hoping it
-            % will be a one size fits all solution...
-            %
-            % TODO - Move the definition of the card format outside the
-            % function and pass in as an argument. (Remember this function
-            % is called in a loop!!)
             
             %Get bulk data names, format & default values
             dataNames   = BulkMeta.Names;
@@ -420,10 +426,6 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             idx = dataFormat == 'b';
             propData(idx)   = [];
             dataFormat(idx) = '';
-            
-            %Check for scientific notation without 'E'
-            %idx = and(contains(propData, '+'), ~contains(propData, 'E'));
-            %propData(idx) = strrep(propData(idx), '+', 'E+');
             
             %Convert integer & real data to numeric data
             numIndex   = or(dataFormat == 'i', dataFormat == 'r');
@@ -450,7 +452,19 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
 
         end
         function assignListCardData(obj, propData, index, BulkMeta)
-            %assignCardData
+            %assignListCardData Assigns card data of an arbitrary length to
+            %the object by converting the raw text input to numeric/char as
+            %necessary.
+            %
+            % Detailed Description:
+            %   - This function is called in a loop during the method for
+            %     importing bulk data from a text file (.bdf, .dat). The
+            %     variable 'index' indicates which element of the object
+            %     bulk data will be assigned during this function.
+            %   - The property data is split into three sections:
+            %       + Prelist: Data that occurs before list variables
+            %       + List: The list data that can be of arbitrary length
+            %       + Postlist: Data that occurs after the list variables
             
             %Index the list
             dataNames  = BulkMeta.Names;
@@ -761,7 +775,7 @@ end
 %
 % If it is the first property in the bulk data entry then it is a mask for
 % the 'ID' property.
-if strcmp(nam, obj.CurrentBulkDataProps{1})
+if strcmp(nam, obj.CurrentBulkDataStruct.IDProp)
     obj.ID = val;
 else
     obj.(nam) = val;
