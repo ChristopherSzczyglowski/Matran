@@ -91,20 +91,20 @@ end
 rawFileData = readCharDataFromFile(bulkFilename, logfcn);
 
 %Split into Executive Control, Case Control and Bulk Data
-[~, CC, BD, unresolvedBulk] = splitInputFile(rawFileData, logfcn);
+[~, ~, bd, unresolvedBulk] = splitInputFile(rawFileData, logfcn);
 
 %Extract "NASTRAN SYSTEM" commands from Executive Control
 
 %Extract Case Control data
 
 %Extract "PARAM" from Bulk Data
-[Parameters, BD] = extractParameters(BD, logfcn);
+[Parameters, bd] = extractParameters(bd, logfcn);
 
 %Extract "INCLUDE" statements and corresponding file names
-[IncludeFiles, BD] = extractIncludeFiles(BD, logfcn, filepath);
+[IncludeFiles, bd] = extractIncludeFiles(bd, logfcn, filepath);
 
 %Extract bulk data
-[FEM, unknownBulk] = extractBulkData(BD, logfcn);
+[FEM, unknownBulk] = extractBulkData(bd, logfcn);
 
 %Loop through INCLUDE files (recursively)
 [data, leftover] = cellfun(@(x) importBulkDataFromFile(x, logfcn), ...
@@ -121,94 +121,7 @@ unknownBulk = [unknownBulk, cat(2, leftover{:})];
 
 end
 
-%Reading raw text from file
-function rawFileData = readCharDataFromFile(filename, logfcn)
-%readCharDataFromFile Reads the data from the file as literal text.
-
-%Grab file identifier
-fileID = fopen(filename, 'r');
-assert(fileID ~= -1, ['Unable to open the file ''%s'' for reading. ', ...
-    'Make sure the file name and path are correct.'] , filename);
-
-logfcn(sprintf('Beginning file read of file ''%s'' ...', filename));
-
-%Import all the data as a string
-%   - Import literal text (including whitespace)
-%   - Remove comments (any line beginning with '$')
-rawFileData = textscan(fileID, '%s', ...
-    'Delimiter'    , '\n' , ...
-    'CommentStyle' , '$'  , ...
-    'WhiteSpace'   , '');
-rawFileData = rawFileData{1};
-
-%Close the file
-fclose(fileID);
-
-%TODO - Check if all data has less than 80 characters
-
-end
-
 %Partitioning the Nastran input file
-function [execControl, caseControl, bulkData, unresolvedBulk] = splitInputFile(data, logfcn)
-%splitInputFile Splits the cell-string data in 'data' into
-%three segments: 'Executive Control', 'Case Control' & 'Bulk
-%Data'.
-%
-% The 'Executive Control' and 'Case Control' are split by the
-% keyword "CEND"
-%
-% The 'Case Control' and 'Bulk Data' are split by the keyword
-% "BEGIN BULK"
-
-%Remove empty lines
-data = data(~cellfun(@(x) isempty(x), data));
-
-%Logical indexing
-idx_EC = contains(data, 'CEND');
-idx_BD = contains(data, 'BEGIN BULK');
-
-%Linear indexing
-indEC = find(idx_EC == true);
-indBD = find(idx_BD == true);
-
-%Check for occurence of 'BEGIN BULK'
-if ~any(idx_BD) %If not found, assume all is bulk
-    execControl = {};
-    caseControl = {};
-    [bulkData, unresolvedBulk] = i_parseBulkData(data);
-    logfcn(['Did not find tokens ''CEND'' or ''BEGIN BULK''. ', ...
-        'Assuming all file contents are bulk data.']);
-    return
-end
-
-%Grab the data
-execControl = data(1 : indEC - 1);
-caseControl = data(indEC + 1 : indBD - 1);
-bulkData    = data(indBD + 1 : end);
-
-%Remove "ENDDATA" from the BulkData cell array
-bulkData(contains(bulkData, 'ENDDATA')) = [];
-
-[bulkData, unresolvedBulk] = i_parseBulkData(bulkData);
-
-logfcn(['Input data split into ''Executive Control'', ', ...
-    '''Case Control'' and ''Bulk Data'' sections.']);
-
-    function [bulkData, unresolvedBulk] = i_parseBulkData(bulkData)
-        %i_parseBulkData Stashes any line that have less than 8 characters
-        %in the variable 'unresolvedBulk' and retains only the lines that
-        %have 8 characters or more.
-        %
-        %
-        % N.B. Any line that has less than 8 characters is ikely to be a
-        % system command.
-        idx = (cellfun(@numel, bulkData) < 8);
-        unresolvedBulk = bulkData(idx);
-        bulkData       = bulkData(~idx);
-        
-    end
-
-end
 function [Parameters, BulkData] = extractParameters(BulkData, logfcn)
 %extractParameters Extracts the parameters from the bulk data
 %and returns the cell array 'BD' with all parameter lines
@@ -258,60 +171,6 @@ BulkData = BulkData(~or(idx_PARAM, idx_MDLPRM));
         logfcn(sprintf('\t- %s\n', name{:}));
         
     end
-
-end
-function [IncludeFiles, BulkData] = extractIncludeFiles(BulkData, logfcn, parentPath)
-%extractIncludeFiles Extracts the path to any files containing
-%data that is included in the bulk data.
-
-%Find all lines containing "INCLUDE"
-idx = contains(BulkData, 'INCLUDE');
-ind = find(idx == true);
-
-%Preallocate
-IncludeIndex = cell(size(ind));
-IncludeFiles = cell(size(ind));
-
-if isempty(ind) %Escape route
-    return
-end
-
-for iFile = 1 : numel(ind) %Extract path to the included file
-    
-    %Extract all data related to the "INCLUDE" card
-    [cardData, IncludeIndex{iFile}] = getCardData(BulkData, ind(iFile));
-    
-    %Remove blanks and combine into one string
-    filename = strtrim(cardData);
-    filename = cat(2, filename{:});
-    
-    %Remove speech marks (if present)
-    filename(strfind(filename, '"'))  = '';
-    filename(strfind(filename, '''')) = '';
-    
-    %Remove "INCLUDE" keyword
-    filename = filename(9 : end);
-    
-    %Check if absolute or relative path
-    [path, ~, ~] = fileparts(filename);
-    
-    %Relative path will have an empty 'path' variable
-    %   -> append with the current directory
-    if isempty(path)
-        filename = fullfile(parentPath, filename);
-    end
-    
-    %Assign to cell array
-    IncludeFiles{iFile} = filename;
-    
-end
-
-%Remove all lines from 'BulkData' relating to INCLUDE
-BulkData(cat(2, IncludeIndex{:})) = [];
-
-%Inform progress
-logfcn(sprintf('Found the following included files:'));
-logfcn(sprintf('\t- %s\n', IncludeFiles{:}));
 
 end
 function [FEM, UnknownBulk] = extractBulkData(BulkData, logfcn)
@@ -473,171 +332,6 @@ end
 end
 
 %Reading text data as bulk data
-function [cardData, cardIndex] = getCardData(data, startIndex, col1)
-%getCardData Extracts the MSC.Nastran bulk data for a given card from the
-%cell array 'data'. The card begins at 'startIndex' and the card data is
-%extracted by searching 'data' for the continuation entries relating to
-%this card.
-%
-% Inputs
-%   - 'data'       : Cell array of character arrays containing the raw text
-%                    output from the text file that is being read.
-%   - 'startIndex' : Index number relating to cell entry in 'data' that
-%                    contains the first line of the bulk data card. This is
-%                    the line where the function will begin extracting
-%                    data.
-% Outputs
-%   - 'cardData'  : Cell array containing the entries from 'data' that
-%                   relate to the card described on data(startIndex).
-%   - 'cardIndex' : Index number of all the entries extracted from 'data'.
-%
-% TODO : Add in check for a continuation entry in column 10. This will be
-%        specific key that must be searched for in column 1 of the file.
-
-%How many lines in the data set?
-nLines = numel(data);
-
-%Check for rubbish input
-if startIndex > nLines
-    cardData = {};
-    return
-end
-
-%Grab card data
-lineData  = data{startIndex};
-cardIndex = startIndex;
-
-%Remove comments found partway through a line
-commentInd = strfind(lineData, '$');
-if ~isempty(commentInd)
-    lineData = lineData(1 : commentInd - 1);
-end
-
-%Check for data in column 10
-[cardData{1}, endCol] = i_removeEndColumn(lineData);
-
-%If 'endCol' is empty then the card is not using continuation
-%entries in column 10 to identify the data.
-%   -> Read next line until we find new data
-if isempty(endCol)
-    
-    %Define next index number
-    nextIndex = startIndex + 1;
-    
-    %Check if we have reached the end of the file
-    if nextIndex <= nLines
-        
-        %Grab data from next line
-        nextLine = data{nextIndex};
-        
-        %Check for data in column 10
-        [nextLine, endCol] = i_removeEndColumn(nextLine);
-        
-        %Check following lines for continuation entries
-        while iscont(nextLine)
-            %Append to 'cardData' and update counter
-            cardIndex = [cardIndex, nextIndex]; %#ok<*AGROW>
-            cardData  = [cardData, {nextLine}];
-            nextIndex = nextIndex + 1;
-            if nextIndex > nLines
-                return
-            end
-            nextLine  = data{nextIndex};
-        end
-        
-    end
-    
-else
-    %If 'endCol' is NOT empty then the card is using
-    %continuation entries in column 10 to identify the data.
-    %   -> Search the data for the continuation key
-    
-    %Keep going until there are no more continuations to read
-    while ~isempty(endCol)
-        
-        %Find the continuation line
-        %   - Can be anywhere in the file
-        index = find(ismember(col1, endCol));
-        if isempty(index)
-            break
-            %error('Continuation entry is not in this file. Update code so we can search all other files as well');
-        end
-        
-        %Remove lines we already know about
-        index(index == startIndex) = [];
-        
-        %Should only be one line that starts with this
-        %continuation...
-        assert(numel(index) == 1, 'Non-unique continuation entry found');
-        
-        %Grab card data & update index numbers
-        lineData           = data{index};
-        cardIndex(end + 1) = index;
-        startIndex         = index;
-        
-        %Check for data in column 10
-        [cardData{end + 1}, endCol] = i_removeEndColumn(lineData);
-        
-    end
-    
-end
-
-    function [lineData, endCol] = i_removeEndColumn(lineData)
-        %i_removeEndColumn If the character array 'lineData' has
-        %more than 72 characters then this function trims any
-        %additional characters and returns them in the variable
-        %'endCol'. The first 72 (or fewer) characters are returned
-        %in the variable 'lineData'.
-        
-        %Sensible default
-        endCol = '';
-        
-        %Check for free-field
-        if contains(lineData, ',')
-            %Search for continuation token
-            ind = strfind(lineData(2:end), '+');
-            if ~isempty(ind)
-                endCol   = strtrim(lineData(ind + 1 : end));
-                lineData = lineData(1 : ind - 1); %Skip the comma!
-            end
-            return
-        end
-        
-        %If the line does not go to 72 characters then no change
-        if numel(lineData) < 73
-            return
-        end
-        
-        endCol   = strtrim(lineData(73 : end));
-        lineData = lineData(1  : 72);
-        
-    end
-
-end
-function tf = iscont(str)
-%iscont Checks if the character array 'str' denotes a
-%continuation entry.
-%
-% A continuation entry is denoted by the charcter '*' or '+' in
-% the first 8 characters of 'str' or if str is an array of
-% blanks.
-
-tf = true;
-
-n    = min(numel(str), 8);
-str_ = str(1 : n);
-
-if isempty(str_) 
-    return
-end
-if isequal(str_(1), '*') || contains(str_, '+') || ...
-        isequal(str_, blanks(n))
-    return
-end
-
-tf = false;
-
-end
 function propData = extractCardData(cardData)
 %extractCardData Extracts raw text data from 'cardData' for a
 %table-formatted MSC.Nastran card relating to the object 'obj'.
