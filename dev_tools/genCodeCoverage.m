@@ -1,10 +1,10 @@
-function [TestResult, fList, pList] = gen_code_coverage
-%gen_code_coverage Generates a code coverage report and obtains the
+function [TestResult, fList, pList] = genCodeCoverage
+%genCodeCoverage Generates a code coverage report and obtains the
 %product dependencies for the package. 
 %
 % Syntax:
 %	- Generate the code coverage report and return the product list...
-%       >> [] = gen_code_coverage;
+%       >> [] = genCodeCoverage;
 %
 % Detailed Description:
 %	-  Generates a code coverage report and obtains the product
