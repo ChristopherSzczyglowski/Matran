@@ -491,6 +491,7 @@ BulkDataMask = struct();
 BulkDataMask.CORD2R  = 'bulk.CoordSystem';
 BulkDataMask.GRID    = 'bulk.Node';
 BulkDataMask.SPOINT  = 'bulk.Node';
+BulkDataMask.EPOINT  = 'bulk.Node';
 BulkDataMask.CBAR    = 'bulk.Beam';
 BulkDataMask.CBEAM   = 'bulk.Beam';
 % BulkDataMask.CROD   = 'bulk.Beam';
@@ -499,6 +500,7 @@ BulkDataMask.PBAR    = 'bulk.BeamProp';
 BulkDataMask.PROD    = 'bulk.BeamProp';
 BulkDataMask.PSHELL  = 'bulk.Property';
 BulkDataMask.MAT1    = 'bulk.Material';
+BulkDataMask.SPC     = 'bulk.Constraint';
 BulkDataMask.SPC1    = 'bulk.Constraint';
 BulkDataMask.CAERO1  = 'bulk.AeroPanel';
 BulkDataMask.SPLINE1 = 'bulk.AeroelasticSpline';
@@ -507,7 +509,7 @@ BulkDataMask.CQUAD4  = 'bulk.Shell';
 BulkDataMask.CTRIA3  = 'bulk.Shell';
 BulkDataMask.AEFACT  = 'bulk.List';
 BulkDataMask.SET1    = 'bulk.List';
-% BulkDataMask.ASET1   = 'bulk.List';
+BulkDataMask.ASET1   = 'bulk.List';
 BulkDataMask.PAERO1  = 'bulk.List';
 BulkDataMask.FLFACT  = 'bulk.List';
 BulkDataMask.TABDMP1 = 'bulk.List';
@@ -526,6 +528,8 @@ BulkDataMask.EIGR    = 'bulk.AnalysisData';
 BulkDataMask.EIGRL   = 'bulk.AnalysisData';
 BulkDataMask.FLUTTER = 'bulk.AnalysisData';
 BulkDataMask.FREQ1   = 'bulk.AnalysisData';
+BulkDataMask.RANDPS  = 'bulk.AnalysisData';
+BulkDataMask.MKAERO1 = 'bulk.AnalysisData';
 
 end
 
