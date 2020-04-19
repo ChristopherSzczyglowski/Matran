@@ -2,3 +2,5 @@
 *.asv
 
 unit_testing/
+
+models/auto_generated_h5_data/
