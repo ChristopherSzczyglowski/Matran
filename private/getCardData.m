@@ -10,12 +10,22 @@ function [cardData, cardIndex] = getCardData(data, startIndex, col1)
 % Detailed Description:
 %	- Detailed explanation of the function and how it works...
 %
+% Inputs
+%   - 'data'       : Cell array of character arrays containing the raw text
+%                    output from the text file that is being read.
+%   - 'startIndex' : Index number relating to cell entry in 'data' that
+%                    contains the first line of the bulk data card. This is
+%                    the line where the function will begin extracting
+%                    data.
+% Outputs
+%   - 'cardData'  : Cell array containing the entries from 'data' that
+%                   relate to the card described on data(startIndex).
+%   - 'cardIndex' : Index number of all the entries extracted from 'data'.
+%
 % See also:
 %
 % References:
-%	[1]. "Can quantum-mechanical description of physical reality be
-%         considered complete?", A Einstein, Physical Review 47(10):777,
-%         American Physical Society 1935, 0031-899X
+%	[1]. 
 %
 % Author    : Christopher Szczyglowski
 % Email     : chris.szczyglowski@gmail.com
@@ -29,22 +39,6 @@ function [cardData, cardIndex] = getCardData(data, startIndex, col1)
 %	- Initial function:
 %
 % <end_of_pre_formatted_H1>
-
-%
-% Inputs
-%   - 'data'       : Cell array of character arrays containing the raw text
-%                    output from the text file that is being read.
-%   - 'startIndex' : Index number relating to cell entry in 'data' that
-%                    contains the first line of the bulk data card. This is
-%                    the line where the function will begin extracting
-%                    data.
-% Outputs
-%   - 'cardData'  : Cell array containing the entries from 'data' that
-%                   relate to the card described on data(startIndex).
-%   - 'cardIndex' : Index number of all the entries extracted from 'data'.
-%
-% TODO : Add in check for a continuation entry in column 10. This will be
-%        specific key that must be searched for in column 1 of the file.
 
 %How many lines in the data set?
 nLines = numel(data);
@@ -65,15 +59,6 @@ if ~isempty(commentInd)
     lineData = lineData(1 : commentInd - 1);
 end
 
-% if contains(lineData, ',')
-%    %Define next index number
-%     nextIndex = startIndex + 1;
-%     while ~isnan(str2double(col1{nextIndex})) && nextIndex <= nLines
-%
-%     end
-%     return
-% end
-
 %Check for data in column 10
 [cardData{1}, endCol] = i_removeEndColumn(lineData);
 
@@ -91,11 +76,10 @@ if isempty(endCol)
         %Grab data from next line
         nextLine = data{nextIndex};
         
-        %Check for data in column 10
-        [nextLine, endCol] = i_removeEndColumn(nextLine);
-        
         %Check following lines for continuation entries
         while iscont(nextLine)
+            %Check for data in column 10
+            [nextLine, ~] = i_removeEndColumn(nextLine);
             %Append to 'cardData' and update counter
             cardIndex = [cardIndex, nextIndex]; %#ok<*AGROW>
             cardData  = [cardData, {nextLine}];
@@ -155,12 +139,15 @@ end
         
         %Check for free-field
         if contains(lineData, ',')
-            %             %Search for continuation token
-            %             ind = strfind(lineData(2:end), '+');
-            %             if ~isempty(ind)
-            %                 endCol   = strtrim(lineData(ind + 1 : end));
-            %                 lineData = lineData(1 : ind - 1); %Skip the comma!
-            %             end
+            temp = strsplit(lineData, ',');
+            if startsWith(temp{end}, '+')
+                endCol = lineData{end};
+            end
+            if or( ...
+                    ~contains(lineData, '*') && numel(temp) == 10, ...
+                    contains(lineData, '*') && numel(temp) == 6)
+                lineData = strjoin(temp(1 : end - 1), ',');
+            end
             return
         end
         
