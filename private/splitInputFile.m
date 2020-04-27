@@ -47,7 +47,7 @@ end
 assert(iscellstr(data), 'Expected ''data'' to be a cell-array of strings.'); %#ok<ISCLSTR>
 
 %Remove empty lines
-data = data(~cellfun(@(x) isempty(x), data));
+%data = data(~cellfun(@(x) isempty(x), data));
 
 %Logical indexing
 idx_EC = contains(data, 'CEND');
@@ -85,9 +85,10 @@ logfcn(['Input data split into ''Executive Control'', ', ...
         %in the variable 'unresolvedBulk' and retains only the lines that
         %have 8 characters or more.
         %
-        % N.B. Any line that has less than 8 characters is ikely to be a
+        % N.B. Any line that has less than 8 characters is likely to be a
         % system command.
-        idx = (cellfun(@numel, bulkData) < 8);
+        nChar = cellfun(@numel, bulkData);
+        idx = and(nChar < 8, nChar > 1);
         unresolvedBulk = bulkData(idx);
         bulkData       = bulkData(~idx);        
     end
