@@ -292,12 +292,7 @@ for iCard = 1 : numel(cardNames)
             progChar(index)  = progressStr;
         end
         
-        BulkMeta = getBulkMeta(BulkObj);
-        if isempty(BulkMeta.ListProp)
-            extract_fcn = @assignCardData;
-        else
-            extract_fcn = @assignListCardData;
-        end
+        BulkMeta    = getBulkMeta(BulkObj);
                 
         logfcn('       ', 0);
         logfcn(progress0, 0);
@@ -306,7 +301,7 @@ for iCard = 1 : numel(cardNames)
             %Extract raw text data for this card and assign to the object
             [cardData, ~] = getCardData(BulkData, ind(iCard), col1);
             propData      = extractCardData(cardData);
-            extract_fcn(BulkObj, propData, iCard, BulkMeta);
+            BulkObj.BulkAssignFunction(BulkObj, propData, iCard, BulkMeta);
             %Strip the previous progress string and write the new one
             logfcn(backspace{iCard}, 0, 1);
             logfcn(progChar{iCard} , 0);

@@ -47,8 +47,13 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
         CurrentBulkDataDefaults
     end
     properties (Dependent, Hidden = true)
-       %Current list of bulk data formats excluding 'b entries
+       %Current list of bulk data formats excluding 'b' (blank) entries
         CurrentBulkDataTypes_ 
+    end
+    
+    %Text import method handles
+    properties (SetAccess = immutable, Hidden = true)
+        BulkAssignFunction = @assignCardData;
     end
     
     %Dynamic props
@@ -384,11 +389,13 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
                 idx = ismember(prpNames(idxNum), BulkDataInfo.PropMask((2 * i) - 1));
                 numVal{idx} = repmat(numVal{idx}, [BulkDataInfo.PropMask{2 * i}, 1]);
             end
+            %   - List properties are preallocated as cells
             if ~isempty(BulkDataInfo.PropList)
                 idxList         = ismember(BulkDataInfo.BulkProps(idxNum), BulkDataInfo.PropList);
                 numVal(idxList) = cellfun(@num2cell, numVal(idxList), 'Unif', false);
-            end
-            %   - List properties are preallocated as cells
+                %Update extract method
+                obj.BulkAssignFunction = @assignListCardData;
+            end            
             set(obj, BulkDataInfo.BulkProps(idxNum), numVal);
             
             %Char data ('c') are stored as cell-strings
