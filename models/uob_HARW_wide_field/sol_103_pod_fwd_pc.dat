@@ -1,0 +1,45 @@
+$
+$ E X E C U T I V E  C O N T R O L
+$ ******************************************************************************
+SOL 103
+ECHOOFF         $ SUPPRESSES THE ECHO OF EXECUTIVE CONTROL
+CEND
+$
+$ C A S E  C O N T R O L
+$ ******************************************************************************
+$ ------------------------------------------------------------------------------
+$ O U T P U T  O P T I O N S
+$ ------------------------------------------------------------------------------
+LINE = 99999999   $ SPECIFIES THE NUMBER OF LINES PER PRINTED PAGE
+ECHO = NONE       $ SUPPRESSES THE ECHO OF BULK DATA
+$ ------------------------------------------------------------------------------
+$ O U T P U T  Q U A N T I T I E S
+$ ------------------------------------------------------------------------------
+DISP(PRINT)             = ALL $ OUTPUT ALL DISPLACEMENTS
+MEFFMASS(PRINT,SUMMARY) = YES $ OUTPUT MODAL EFFECTIVE MASS
+ESE(PLOT)               = ALL $ OUTPUT ELEMENT STRAIN ENERGY
+GPKE(NOPRINT)           = ALL $ OUTPUT GRID POINT KINETIC ENERGY
+$ ------------------------------------------------------------------------------
+$ S U B C A S E S
+$ ------------------------------------------------------------------------------
+METHOD = 102
+SPC    = 101
+$
+$ B E G I N  B U L K
+$ ******************************************************************************
+BEGIN BULK
+MDLPRM,HDF5,1
+PARAM,POST,1
+PARAM,GRDPNT,0
+PARAM,BAILOUT,-1
+$.1.....2.......3.......4.......5.......6.......7.......8.......9.......10......
+SPC1    101     123456  500  
+EIGRL   102     0.000           20      
+$ ------------------------------------------------------------------------------
+$ I N C L U D E  F I L E S
+$ ------------------------------------------------------------------------------
+INCLUDE 'wing_spar.bdf'    
+INCLUDE 'spar_beam_props_pc.bdf'  
+INCLUDE 'panel_masses.bdf'    
+INCLUDE 'pod_mass_fwd.bdf'  
+ENDDATA

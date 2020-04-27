@@ -51,9 +51,10 @@ classdef TestMatran < matlab.unittest.TestCase
             'aero\ha76b.dat'            , ... %BAH jet transport enforced aileron displacement
             'aero\ha76c.dat'            , ... %BAH jet transport random gust 
             'aero\ha75f.dat'            , ... %NASA TN D-1824 PK flutter analysis
-            '\aero\ha145z.dat'}; %NASA TN D-1824 
+            'aero\ha145z.dat'}; %NASA TN D-1824 
         TextImportFiles = { ...
-            'uob_HARW\wing_model_R.bdf'}; %HARW wing
+            'uob_HARW\wing_model_R.bdf', ...                %HARW wing
+            'uob_HARW_wide_field\sol_103_pod_fwd_pc.dat'};  %HARW wing (wide-field)
     end
     properties (SetAccess = private)
         TestFigure
