@@ -278,11 +278,12 @@ for iCard = 1 : numel(cardNames)
         nChar     = 50;  %total number of characters to denote 100%
         progChar  = repmat({''}, [1, nCard]);
         backspace = repmat({''}, [1, nCard]);
-        incr      = floor(nCard / nChar);
-        if incr == 0
+        incr      = nCard / nChar;
+        if floor(incr) == 0
             progress0 = '';
         else
-            index        = [incr : incr : nCard];
+            index        = floor(incr : incr : nCard);
+            index(end)   = nCard;
             num          = numel(index);
             progress0    = ['[', repmat(' ', [1, num]), ']'];
             progressStr  = arrayfun(@(ii) ['[', pad(repmat('#', [1, ii]), num), ']'], 1 : num, 'Unif', false);
