@@ -52,7 +52,7 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
     end
     
     %Text import method handles
-    properties (SetAccess = immutable, Hidden = true)
+    properties (SetAccess = private, Hidden = true)
         BulkAssignFunction = @assignCardData;
     end
     
