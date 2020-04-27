@@ -40,6 +40,13 @@ if isequal(str_(1), '*') || contains(str_, '+') || ...
     return
 end
 
+if contains(str, ',')
+    temp = strsplit(str, ',');
+    if ~isnan(str2double(temp{1})) || isempty(temp{1})
+        tf = true;
+        return
+    end
+end
 tf = false;
 
 end
