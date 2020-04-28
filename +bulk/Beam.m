@@ -46,7 +46,7 @@ classdef Beam < bulk.BulkData
                 'SetMethod'  , {'OFFT', @validateOFFT});
             varargin = parse(obj, varargin{:});
             preallocate(obj);
-            
+                        
         end
     end
     

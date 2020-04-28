@@ -52,7 +52,7 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
     end
     
     %Text import method handles
-    properties (SetAccess = private, Hidden = true)
+    properties (SetAccess = protected, Hidden = true)
         BulkAssignFunction = @assignCardData;
     end
     
@@ -440,8 +440,13 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             numDefault = dataDefault(numIndex);
             prpDefault = dataDefault(~numIndex);
             
-            %Allocate defaults
-            idxNan            = isnan(numData);
+            %Check for missing data
+            idxNan = isnan(numData);
+            assert(~any(cellfun(@isempty, numDefault(idxNan))), sprintf( ...
+                ['Essential data missing in %s entry number %i. Check ', ...
+                'the input file.'], obj.CardName, index));
+            
+            %Allocate defaults            
             numData(idxNan)   = vertcat(numDefault{idxNan});
             prpData           = propData(~numIndex);
             idxEmpty          = cellfun(@isempty, prpData);
@@ -569,7 +574,7 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
                obj.(listNames{ii}){index} = propData{ii}; 
             end
                         
-        end    
+        end            
         function BulkMeta = getBulkMeta(obj)
             %getBulkMeta Returns the meta information for this bulk data
             %entry based on the current card name.

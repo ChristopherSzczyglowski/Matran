@@ -4,6 +4,9 @@ classdef FEModel < matlab.mixin.SetGet & mixin.Dynamicable
     %
     % Detailed Description:
     %   - 
+    %
+    % TODO - Add a method for tidying up the PBEAM/PBAR entries and
+    % defining default values.
         
     properties (SetAccess = private, Hidden = true)
         %Cell array of character vectors containing the names of the bulk
