@@ -103,6 +103,7 @@ classdef FEModel < matlab.mixin.SetGet & mixin.Dynamicable
                        %List bulk will have a cell instead of array
                        %idNum = idNum{1};
                        idNum = horzcat(idNum{:});
+                       idNum(idNum == 0) = [];
                    end
                    if ~any(idNum)
                        %Nothing to index!
