@@ -50,6 +50,44 @@ classdef Beam < bulk.BulkData
         end
     end
     
+    methods % assigning data during import
+        function assignH5BulkData(obj, bulkNames, bulkData)
+            %assignH5BulkData Assigns the object data during the import
+            %from a .h5 file.
+                        
+            prpNames   = obj.CurrentBulkDataProps;
+            
+            %Index of matching bulk data names
+            [~, ind]  = ismember(bulkNames, prpNames);
+            [~, ind_] = ismember(prpNames, bulkNames);
+            
+            %Build the prop data 
+            prpData  = cell(size(prpNames));            
+            prpData(ind(ind ~= 0)) = bulkData(ind_(ind_ ~= 0));
+            prpData{ismember(prpNames, 'GA_GB')}   = vertcat(bulkData{ismember(bulkNames, {'GA', 'GB'})});
+            %N.B. 'FLAG' used in CBAR, 'F' in CBEAM
+            %   - Makes absolutely no sense for the schema to use different
+            %     names for what is essentially the same thing!!!!!
+            if any(bulkData{ismember(bulkNames, {'FLAG', 'F'})} ~= 1) 
+                error('Update code for unknown OFFSET flag');
+            else
+                prpData{ismember(prpNames, 'OFFT')}  = repmat({'GGG'}, [1, obj.NumBulk]);
+            end            
+            %Card specific
+            switch obj.CardName
+                case 'CBAR'
+                    prpData{ismember(prpNames, 'X')}    = ...
+                        vertcat(bulkData{ismember(bulkNames, {'X1', 'X2', 'X3'})});
+                case 'CBEAM'
+                    prpData{ismember(prpNames, 'SA_B')} = ...
+                        vertcat(bulkData{ismember(bulkNames, {'SA', 'SB'})});
+                    
+            end
+            
+            assignH5BulkData@bulk.BulkData(obj, prpNames, prpData)
+        end
+    end
+    
     methods % validation
         function validateOFFT(obj, val, prpName, varargin)
             

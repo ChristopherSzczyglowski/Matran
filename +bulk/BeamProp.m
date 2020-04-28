@@ -80,6 +80,62 @@ classdef BeamProp < bulk.BulkData
     end
     
     methods % assigning data during import
+        function assignH5BulkData(obj, bulkNames, bulkData)
+            %assignH5BulkData Assigns the object data during the import
+            %from a .h5 file.
+            
+            prpNames   = obj.CurrentBulkDataProps;
+            
+            %Build the prop data 
+            prpData       = cell(size(prpNames));            
+            prpData(ismember(prpNames, bulkNames)) = bulkData(ismember(bulkNames, prpNames));
+            switch obj.CardName
+                case 'PBAR'                    
+                    prpData{ismember(prpNames, 'C')}   = vertcat(bulkData{ismember(bulkNames, {'C1', 'C2'})});
+                    prpData{ismember(prpNames, 'D')}   = vertcat(bulkData{ismember(bulkNames, {'D1', 'D2'})});
+                    prpData{ismember(prpNames, 'E')}   = vertcat(bulkData{ismember(bulkNames, {'E1', 'E2'})});
+                    prpData{ismember(prpNames, 'F')}   = vertcat(bulkData{ismember(bulkNames, {'F1', 'F2'})});
+                    prpData{ismember(prpNames, 'K')}   = vertcat(bulkData{ismember(bulkNames, {'K1', 'K2'})});
+                case 'PBEAM'
+                    prpData{ismember(prpNames, 'A_A')}   = bulkData{ismember(bulkNames, 'A')}(1, :);
+                    prpData{ismember(prpNames, 'I1_A')}  = bulkData{ismember(bulkNames, 'I1')}(1, :);
+                    prpData{ismember(prpNames, 'I2_A')}  = bulkData{ismember(bulkNames, 'I2')}(1, :);
+                    prpData{ismember(prpNames, 'I12_A')} = bulkData{ismember(bulkNames, 'I12')}(1, :);
+                    prpData{ismember(prpNames, 'J_A')}   = bulkData{ismember(bulkNames, 'J')}(1, :);
+                    prpData{ismember(prpNames, 'NSM_A')} = bulkData{ismember(bulkNames, 'NSM')}(1, :);
+                    prpData{ismember(prpNames, 'C_A')}   =  ...
+                        [bulkData{ismember(bulkNames, 'C1')}(1, :) ; bulkData{ismember(bulkNames, 'C2')}(1, :) ];
+                    prpData{ismember(prpNames, 'D_A')}   =  ...
+                        [bulkData{ismember(bulkNames, 'D1')}(1, :) ; bulkData{ismember(bulkNames, 'D2')}(1, :) ];
+                    prpData{ismember(prpNames, 'E_A')}   =  ...
+                        [bulkData{ismember(bulkNames, 'E1')}(1, :) ; bulkData{ismember(bulkNames, 'E2')}(1, :) ];
+                    prpData{ismember(prpNames, 'F_A')}   =  ...
+                        [bulkData{ismember(bulkNames, 'F1')}(1, :) ; bulkData{ismember(bulkNames, 'F2')}(1, :) ];
+                    prpData{ismember(prpNames, 'X_XB')} = ones(1, obj.NumBulk);
+                    prpData{ismember(prpNames, 'A_B')}   = bulkData{ismember(bulkNames, 'A')}(end, :);
+                    prpData{ismember(prpNames, 'I1_B')}  = bulkData{ismember(bulkNames, 'I1')}(end, :);
+                    prpData{ismember(prpNames, 'I2_B')}  = bulkData{ismember(bulkNames, 'I2')}(end, :);
+                    prpData{ismember(prpNames, 'I12_B')} = bulkData{ismember(bulkNames, 'I12')}(end, :);
+                    prpData{ismember(prpNames, 'J_B')}   = bulkData{ismember(bulkNames, 'J')}(end, :);
+                    prpData{ismember(prpNames, 'NSM_B')} = bulkData{ismember(bulkNames, 'NSM')}(end, :);
+                    prpData{ismember(prpNames, 'C_B')}   =  ...
+                        [bulkData{ismember(bulkNames, 'C1')}(end, :) ; bulkData{ismember(bulkNames, 'C2')}(end, :) ];
+                    prpData{ismember(prpNames, 'D_B')}   =  ...
+                        [bulkData{ismember(bulkNames, 'D1')}(end, :) ; bulkData{ismember(bulkNames, 'D2')}(end, :) ];
+                    prpData{ismember(prpNames, 'E_B')}   =  ...
+                        [bulkData{ismember(bulkNames, 'E1')}(end, :) ; bulkData{ismember(bulkNames, 'E2')}(end, :) ];
+                    prpData{ismember(prpNames, 'F_B')}   =  ...
+                        [bulkData{ismember(bulkNames, 'F1')}(end, :) ; bulkData{ismember(bulkNames, 'F2')}(end, :) ];
+                    prpData{ismember(prpNames, 'K')}   = vertcat(bulkData{ismember(bulkNames, {'K1', 'K2'})});
+                    prpData{ismember(prpNames, 'S')}   = vertcat(bulkData{ismember(bulkNames, {'S1', 'S2'})});
+                    prpData{ismember(prpNames, 'CW')}   = vertcat(bulkData{ismember(bulkNames, {'CWA', 'CWB'})});
+                    prpData{ismember(prpNames, 'M_A')}  = vertcat(bulkData{ismember(bulkNames, {'M1A', 'M2A'})});
+                    prpData{ismember(prpNames, 'M_B')}  = vertcat(bulkData{ismember(bulkNames, {'M1B', 'M2B'})});
+                    prpData{ismember(prpNames, 'N_A')}  = vertcat(bulkData{ismember(bulkNames, {'N1A', 'N2A'})});
+                    prpData{ismember(prpNames, 'N_B')}  = vertcat(bulkData{ismember(bulkNames, {'N1A', 'N2A'})});
+            end
+            assignH5BulkData@bulk.BulkData(obj, prpNames, prpData)
+        end
         function assignPBeamData(obj, propData, index, BulkMeta)
             %assignPBeamData Assigns data for a PBeam entry to the object.
             %

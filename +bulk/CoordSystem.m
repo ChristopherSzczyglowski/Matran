@@ -27,6 +27,28 @@ classdef CoordSystem < bulk.BulkData
         end
     end
     
+    methods % assigning data during import
+        function assignH5BulkData(obj, bulkNames, bulkData)
+            %assignH5BulkData Assigns the object data during the import
+            %from a .h5 file.
+            
+            if ~strcmp(obj.CardName, 'CORD2R')
+                error('Update code');
+            end
+            
+            prpNames   = obj.CurrentBulkDataProps;
+            
+            %Build the prop data 
+            prpData       = cell(size(prpNames));            
+            prpData(ismember(prpNames, bulkNames)) = bulkData(ismember(bulkNames, prpNames));
+            prpData{ismember(prpNames, 'A')}   = vertcat(bulkData{ismember(bulkNames, {'A1', 'A2', 'A3'})});
+            prpData{ismember(prpNames, 'B')}   = vertcat(bulkData{ismember(bulkNames, {'B1', 'B2', 'B3'})});
+            prpData{ismember(prpNames, 'C')}   = vertcat(bulkData{ismember(bulkNames, {'C1', 'C2', 'C3'})});
+            
+            assignH5BulkData@bulk.BulkData(obj, prpNames, prpData)
+        end
+    end
+    
     methods (Sealed)
         function rMatrix = getRotationMatrix(obj)
             %getRotationMatrix Calculates the 3x3 rotation matrix for each

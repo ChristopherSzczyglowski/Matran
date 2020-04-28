@@ -24,6 +24,27 @@ classdef AeroPanel < bulk.BulkData
         end
     end
     
+    methods % assigning data during import
+        function assignH5BulkData(obj, bulkNames, bulkData)
+            %assignH5BulkData Assigns the object data during the import
+            %from a .h5 file.
+            
+            if ~strcmp(obj.CardName, 'CAERO1')
+                error('Update code');
+            end
+            
+            prpNames   = obj.CurrentBulkDataProps;
+            
+            %Build the prop data 
+            prpData       = cell(size(prpNames));            
+            prpData(ismember(prpNames, bulkNames)) = bulkData(ismember(bulkNames, prpNames));
+            prpData{ismember(prpNames, 'X1')}   = vertcat(bulkData{ismember(bulkNames, {'X1', 'Y1', 'Z1'})});
+            prpData{ismember(prpNames, 'X4')}   = vertcat(bulkData{ismember(bulkNames, {'X4', 'Y4', 'Z4'})});
+            
+            assignH5BulkData@bulk.BulkData(obj, prpNames, prpData)
+        end
+    end
+    
     methods % visualisation
         function hg = drawElement(obj, hAx)
             %drawElement Draws the AeroPanel object as a single patch

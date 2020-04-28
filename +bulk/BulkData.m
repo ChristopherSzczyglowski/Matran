@@ -407,6 +407,24 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
     end
     
     methods % assigning data during import
+        function assignH5BulkData(obj, bulkNames, bulkData)
+            %assignH5BulkData Assigns the object data during the import
+            %from a .h5 file.
+            
+            %Replace 'ID' if it is found
+            bulkNames(ismember(bulkNames, 'ID')) = {obj.CurrentBulkDataStruct.IDProp};
+            
+            prpNames   = obj.CurrentBulkDataProps;
+            [idx, ind] = ismember(bulkNames, prpNames);
+            %idx_       = ismember(prpNames, bulkNames);
+            if any(~idx)
+                warning(['The following entries in the h5 file are ', ...
+                    'unknown to the ''%s'' card:\n\t%s\n\n'], obj.CardName, ...
+                    strjoin(bulkNames(~idx), ', '));
+            end
+            set(obj, prpNames(ind(ind ~= 0)), bulkData(idx));
+            
+        end
         function assignCardData(obj, propData, index, BulkMeta)
             %assignCardData Assigns the card data for the object by
             %converting the raw text input to numeric/char as necessary.

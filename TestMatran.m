@@ -53,9 +53,12 @@ classdef TestMatran < matlab.unittest.TestCase
             'aero\ha76c.dat'            , ... %BAH jet transport random gust 
             'aero\ha75f.dat'            , ... %NASA TN D-1824 PK flutter analysis
             'aero\ha145z.dat'}; %NASA TN D-1824 
+        %Custom files which will be shipped with the repo
         TextImportFiles = { ...
             'uob_HARW\wing_model_R.bdf', ...                %HARW wing
             'uob_HARW_wide_field\sol_103_pod_fwd_pc.dat'};  %HARW wing (wide-field)
+        %Auto-generated .h5 files from the 'models' folder
+        AutoH5Files = getH5files;
     end
     properties (SetAccess = private)
         TestFigure
@@ -275,6 +278,9 @@ classdef TestMatran < matlab.unittest.TestCase
             TextImportFiles = getFilePath(obj, TextImportFiles, 'model');
             importThenDraw(obj, TextImportFiles);
         end        
+        function importFromAutoH5File(obj, AutoH5Files)
+            [FEModel, FileMeta] = importH5(AutoH5Files);
+        end
     end
     methods (TestMethodTeardown)
         function closeFigures(obj)
@@ -328,4 +334,14 @@ classdef TestMatran < matlab.unittest.TestCase
         end
     end
     
+end
+
+function h5FileList = getH5files
+%Get the list of .h5 files in the 'models\auto_generated_h5_data' directory
+
+path = 'models\auto_generated_h5_data';
+Contents = dir(path);
+idx = endsWith({Contents.name}, '.h5');
+h5FileList = fullfile(path, {Contents(idx).name});
+
 end

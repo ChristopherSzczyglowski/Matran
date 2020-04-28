@@ -63,5 +63,31 @@ classdef AnalysisData < bulk.BulkData
         end
     end
         
+     methods % assigning data during import
+        function assignH5BulkData(obj, bulkNames, bulkData)
+            %assignH5BulkData Assigns the object data during the import
+            %from a .h5 file.
+            
+            prpNames   = obj.CurrentBulkDataProps;
+            
+            %Build the prop data
+            prpData       = cell(size(prpNames));            
+            prpData(ismember(prpNames, bulkNames)) = bulkData(ismember(bulkNames, prpNames));
+            switch obj.CardName
+                case 'MKAERO1'
+                    m_lab = cellstr(strcat('M', num2str((1 : 8)')))';
+                    prpData{ismember(prpNames, 'M')} = ...
+                        vertcat(bulkData{ismember(bulkNames, m_lab)});
+                    k_lab = cellstr(strcat('K', num2str((1 : 8)')))';
+                    prpData{ismember(prpNames, 'K')} = ...
+                        vertcat(bulkData{ismember(bulkNames, k_lab)});
+                otherwise
+                    
+            end
+            assignH5BulkData@bulk.BulkData(obj, prpNames, prpData)
+            
+        end
+     end
+    
 end
 

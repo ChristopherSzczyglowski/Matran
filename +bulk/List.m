@@ -80,6 +80,26 @@ classdef List < bulk.BulkData
         end
     end
     
+    methods % assigning data during import
+        function assignH5BulkData(obj, bulkNames, bulkData)
+            %assignH5BulkData Assigns the object data during the import
+            %from a .h5 file.
+            
+            if ~strcmp(obj.CardName, 'PAERO1')
+                error('Update code');
+            end
+            
+            prpNames   = obj.CurrentBulkDataProps;
+            
+            %Build the prop data
+            prpData       = cell(size(prpNames));
+            prpData(ismember(prpNames, bulkNames)) = bulkData(ismember(bulkNames, prpNames));
+            prpData{ismember(prpNames, 'Bi')}      = ...
+                vertcat(bulkData{ismember(bulkNames, {'B1', 'B2', 'B3', 'B4', 'B5', 'B6'})});
+            assignH5BulkData@bulk.BulkData(obj, prpNames, prpData)
+        end
+    end
+    
     methods % validation TODO - Pass in the valid tokens as an extra argument!!
         function validateTYPE(obj, val, prpName, varargin)
             validateThenSetString(obj, val, prpName, obj.ValidDampingType);            
