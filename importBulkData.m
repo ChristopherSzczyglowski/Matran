@@ -203,8 +203,8 @@ col1      = strtrim(col1);
 %   - N.B. Uniqueness not guaranteed because of potential for
 %          free-field bulk data cards.
 idxCont   = or(cellfun(@(x) iscont(x), col1), ~isnan(str2double(col1))); %A free-field continuation can contain numeric data
-idx       = or(idxCont, contains(col1, '*')); %Got to account for card names with large-field format
-cardNames = strtrim(unique(col1(~idx), 'stable'));     %Extract the data in the order it appears
+cardNames = strtrim(unique(col1(~idxCont), 'stable'));      %Extract the data in the order it appears
+cardNames = unique(strrep(cardNames, '*', ''), 'stable');   %Remove duplicates due to wide-field format
 cardNames = cardNames(~cellfun(@isempty, cardNames));
 
 %Loop through cards - create objects & populate properties
@@ -215,9 +215,7 @@ for iCard = 1 : numel(cardNames)
     %Find all cards of this type in the collection BUT do not
     %include continuation lines. We are searching for the first
     %line of the card.
-    %idx = and(contains(col1, cn), ~idxCont);
     idx   = and(or(strcmp(col1, cn), strcmp(col1, [cn, '*'])), ~idxCont);
-    %idx   = and(contains(col1, cn), ~idxCont);
     ind   = find(idx == true);
     nCard = nnz(idx);
     
@@ -247,15 +245,7 @@ for iCard = 1 : numel(cardNames)
         %Initialise the object
         fcn     = str2func(str);
         BulkObj = fcn(cn, nCard);
-        
-        %Which cards are wide-field format?
-        isWF  = contains(col1(idx), '*');
-        if any(isWF)
-            error('Update code for wide-field format');
-        end
-        %         set(card(isWF) , 'ColWidth', 16);
-        %         set(card(~isWF), 'ColWidth', 8);
-        
+
         %Set up character tokens for denoting progress
         nChar     = 50;  %total number of characters to denote 100%
         progChar  = repmat({''}, [1, nCard]);
