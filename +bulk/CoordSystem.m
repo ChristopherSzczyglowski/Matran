@@ -64,7 +64,7 @@ classdef CoordSystem < bulk.BulkData
             %getOrigin Calculates the (x,y,z) coordinates of the origin of
             %the coordinates system in the local frame.
             
-            originCoords = zeros(3, 1);
+            originCoords = zeros(3, obj.NumBulk);
             
             if any(obj.RID ~= 0)
                 warning('Update code to handle coordinate systems defined in a local frame.');
