@@ -274,15 +274,21 @@ for iCard = 1 : numel(cardNames)
             progChar(index)  = progressStr;
         end
         
-        BulkMeta    = getBulkMeta(BulkObj);
+        BulkMeta = getBulkMeta(BulkObj);
+        
+        switch cn %Function for parsing bulk data entry
+            case 'PBEAM'
+                extractFcn = @parsePBEAM;
+            otherwise
+                extractFcn = @parseBulkDataEntry;
+        end
                 
         logfcn('       ', 0);
         logfcn(progress0, 0);
         %Extract data for each instance of the card
         for iCard = 1 : nCard %#ok<FXSET> 
             %Extract raw text data for this card and assign to the object
-            [cardData, ~] = getCardData(BulkData, ind(iCard), col1);
-            propData      = extractCardData(cardData);
+            propData = extractFcn(BulkData, ind(iCard), col1);
             BulkObj.BulkAssignFunction(BulkObj, propData, iCard, BulkMeta);
             %Strip the previous progress string and write the new one
             logfcn(backspace{iCard}, 0, 1);
@@ -310,17 +316,57 @@ end
 end
 
 %Reading text data as bulk data
-function propData = extractCardData(cardData)
-%extractCardData Extracts raw text data from 'cardData' for a
-%table-formatted MSC.Nastran card relating to the object 'obj'.
+function propData = parseBulkDataEntry(BulkData, index, col1)
+%parseBulkDataEntry Finds all lines in the file that contain data for this
+%card and splits the data into sets of bulk data values.
+
+[cardData, ~] = getCardData(BulkData, index, col1);
+propData      = extractCardData(cardData);            
+
+end
+function propData = parsePBEAM(BulkData, index, col1)
+%parsePBEAM Finds all lines in the file that contain data for a PBEAM card
+%and splits the data into set of bulk data values. 
 %
-% Table-formatted cards can ony have one value per property so
-% it is a simple matter of extracting the data based on the
-% delimiter.
+% N.B. A seperate function is required because the PBEAM is extremely
+% tricky to deal with
+
+%TODO - Update this so we return a normal propdata but we always ensure it
+%has 48 elements (e.g. 6 rows of 8 sets of data)
+
+[cardData, ~] = getCardData(BulkData, index, col1);
+if ~any(contains(cardData, ','))
+    error('Check code');
+end
+propData = extractCardData(cardData, true);
+
+%Find beam stations - Only retain x_xL = [0, 1]
+idx           = cellfun(@(x) any(contains(x, {'YES', 'YESA', 'NO'})), propData);
+if nnz(idx) > 1
+    warning('Unable to handle PBEAM entries with more than one beam station. Update the code.');
+end
+beamInd       = find(idx);
+beamInd       = [beamInd ; beamInd + 1];
+idxEndStation = cellfun(@(x) str2double(x{2}) == 1, propData(idx));
+indRemove     = beamInd(:, ~idxEndStation);
+propData(indRemove(:)) = [];
+
+%Pad each row to have 8 sets of data
+propData = cellfun(@(x) [x, repmat({''}, [1, 8 - numel(x)])], propData, 'Unif', false);
+
+end
+function propData = extractCardData(cardData, bRetainRows)
+%extractCardData Splits the raw character data into individual values based
+%on how the data is delimited.
+%
 %   * Fixed-width - Delimited by columns of equal width -> Data
 %                   can be extracted using 'textscan'.
 %   * Free-Field - Delimited by commas -> Data can be extracted
 %                  using strsplit.
+
+if nargin < 2
+    bRetainRows = false;
+end
 
 %Read data from the character array
 if any(contains(cardData, ','))
@@ -335,10 +381,16 @@ if any(contains(cardData, ','))
         temp = strsplit(cardData{iR}, ',');
         %Assume the first entry is the card name or the
         %continuation entry
-        propData{iR} = temp(2 : end);
+        if isnan(str2double(temp{1}))
+            propData{iR} = temp(2 : end);
+        else
+            propData{iR} = temp;
+        end
     end
     
-    %Return a cell-vector
+    nCols = cellfun(@numel, propData);
+    
+    %Return a cell-array
     propData = horzcat(propData{:});
     
 else
@@ -364,6 +416,7 @@ else
         propData = i_splitDataByColWidth(strData, cw(1));
         
     else
+        error('Check this code');
         %Mixed column widths - Loop through
         propData = cell(1, n);
         for ii = 1 : n
@@ -380,6 +433,12 @@ propData = strtrim(propData);
 %Check for scientific notation without 'E'
 propData = i_parseScientificFormat(propData, '+');
 propData = i_parseScientificFormat(propData, '-');
+
+if bRetainRows %Recover row format
+    ub = cumsum(nCols);
+    lb = [1, ub(1 : end - 1) + 1];
+    propData = arrayfun(@(ii) propData(lb(ii) : ub(ii)), 1 : numel(lb), 'Unif', false);
+end
 
     function propData = i_splitDataByColWidth(strData, colWidth)
         %i_splitDataByColWidth Splits the character array 'strData'
@@ -472,9 +531,9 @@ BulkDataMask.SPOINT  = 'bulk.Node';
 BulkDataMask.EPOINT  = 'bulk.Node';
 BulkDataMask.CBAR    = 'bulk.Beam';
 BulkDataMask.CBEAM   = 'bulk.Beam';
-BulkDataMask.CROD   = 'bulk.Beam';
+BulkDataMask.CROD    = 'bulk.Beam';
 BulkDataMask.PBAR    = 'bulk.BeamProp';
-% BulkDataMask.PBEAM   = 'bulk.BeamProp';
+BulkDataMask.PBEAM   = 'bulk.BeamProp';
 BulkDataMask.PROD    = 'bulk.BeamProp';
 BulkDataMask.PSHELL  = 'bulk.Property';
 BulkDataMask.MAT1    = 'bulk.Material';

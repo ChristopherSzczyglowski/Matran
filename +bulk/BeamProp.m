@@ -72,6 +72,66 @@ classdef BeamProp < bulk.BulkData
             varargin = parse(obj, varargin{:});
             preallocate(obj);
             
+            if strcmp(obj.CardName, 'PBEAM')
+                obj.BulkAssignFunction = @assignPBeamData;
+            end
+            
+        end
+    end
+    
+    methods % assigning data during import
+        function assignPBeamData(obj, propData, index, BulkMeta)
+            %assignPBeamData Assigns data for a PBeam entry to the object.
+            %
+            % Assumption: The PBEAM data is always fully populated i.e.
+            % has 48 sets of data and only one continuation entry.
+             
+            %If J is not defined then it is the avergate of I1 & I2
+            if isempty(propData{1}{ismember(BulkMeta.Names, 'J_A')})
+                propData{1}{ismember(BulkMeta.Names, 'J_A')} = ...
+                    0.5 * sum(str2num(vertcat(propData{1}{ismember(BulkMeta.Names, {'I1_A', 'I2_A'})}))); %#ok<ST2NM>
+            end
+            
+            %Deal with first two rows (End-A)
+            data_endA = horzcat(propData{1 : 2});
+            Meta_endA = struct('Names', {BulkMeta.Names(1 : 12)}, ...
+                'Format'  , BulkMeta.Format(1 : 16)   , ...
+                'Default' , {BulkMeta.Default(1 : 16)}, ...
+                'Bounds'  , BulkMeta.Bounds(:, 1 : 12), ...
+                'ListProp', {{}});
+            assignCardData(obj, data_endA, index, Meta_endA);
+            propData([1, 2]) = [];
+            if isempty(propData)
+                return
+            end
+            
+            %Deal with End-B
+            %   - Adjust bounds for indexing as we are dealing with a
+            %     subset of the complete data
+            idx  = cellfun(@(x) any(contains(x, {'YES', 'YESA', 'NO'})), propData);
+            if any(idx)
+                data_endB = horzcat(propData{1 : 2});
+                Meta_endB = struct('Names', {BulkMeta.Names(13 : 24)}, ...
+                    'Format'  , BulkMeta.Format(17 : 32)   , ...
+                    'Default' , {BulkMeta.Default(17 : 32)}, ...
+                    'Bounds'  , BulkMeta.Bounds(:, 13 : 24) - BulkMeta.Bounds(2, 12), ...
+                    'ListProp', {{}});
+                assignCardData(obj, data_endB, index, Meta_endB);
+                propData([1, 2]) = [];
+            end
+            if isempty(propData)
+                return
+            end
+            
+            %Any remaining data is related to the last two continutations
+            data_final = horzcat(propData{:});
+            Meta_final = struct('Names', {BulkMeta.Names(25 : end)}, ...
+                'Format'  , BulkMeta.Format(33 : end)   , ...
+                'Default' , {BulkMeta.Default(33 : end)}, ...
+                'Bounds'  , BulkMeta.Bounds(:, 25 : end) - BulkMeta.Bounds(2, 24), ...
+                'ListProp', {{}});
+            assignCardData(obj, data_final, index, Meta_final);
+            
         end
     end
     
