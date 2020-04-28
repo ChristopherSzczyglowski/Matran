@@ -39,6 +39,12 @@ classdef Constraint < bulk.BulkData
             %at the specified nodes and returns a single handle for all the
             %beams in the collection.
             
+            hg = [];
+            
+            if isempty(obj.Nodes)
+                return
+            end
+            
             coords = obj.Nodes.X(:, obj.NodesIndex);
             
             switch obj.CardName

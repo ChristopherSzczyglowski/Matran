@@ -43,6 +43,10 @@ classdef Mass < bulk.BulkData
             
             hg = [];
                        
+            if isempty(obj.Nodes)
+                return
+            end
+            
             if any(obj.CID)
                 error('Update draw method for different offset systems.');
             end

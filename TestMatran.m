@@ -37,8 +37,9 @@ classdef TestMatran < matlab.unittest.TestCase
     %	- Initial function:
     %
     % <end_of_pre_formatted_H1>
-    %
-    %
+    % 
+    % TODO - Add a test which runs every public method on a new object.
+    % Should be no errors!
     
     %Importing
     properties (TestParameter)
@@ -200,6 +201,29 @@ classdef TestMatran < matlab.unittest.TestCase
                 end
             end
             
+        end
+        function drawEmptyBulk(obj)
+            %drawEmptyBulk Checks that each bulk data object can be
+            %drawn from a basic constructor call.
+            
+            obj.TestFigure = figure;
+            hAx = axes('Parent', obj.TestFigure);
+            
+            %Get list of all bulk objects
+            bulkClasses = obj.getBulkClasses;
+            
+            %Make an instance of each object with no inputs
+            for ii = 1 : numel(bulkClasses)
+                func = str2func(bulkClasses{ii});
+                %Initiate with no inputs
+                bulkObj = func();
+                %Make sure we can draw it
+                mc = metaclass(bulkObj);
+                if ~ismember('drawElement', {mc.MethodList.Name})
+                    continue
+                end
+                drawElement(bulkObj, hAx);
+            end            
         end
     end
     methods (Static)

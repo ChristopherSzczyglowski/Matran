@@ -69,6 +69,12 @@ classdef Beam < bulk.BulkData
             %the nodes and returns a single handle for all the beams in the
             %collection.
             
+            hg = [];
+            
+            if isempty(obj.Nodes)
+                return
+            end
+            
             coords = getDrawCoords(obj.Nodes, obj.DrawMode);            
             xA     = coords(:, obj.NodesIndex(1, :));
             xB     = coords(:, obj.NodesIndex(2, :));  

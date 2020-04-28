@@ -34,7 +34,7 @@ classdef AeroPanel < bulk.BulkData
             
             %Grab the panel data      
             PanelData = getPanelData(obj);             
-            if isempty(PanelData)
+            if isempty(PanelData) || isempty(PanelData.Coords)
                 return
             end
             

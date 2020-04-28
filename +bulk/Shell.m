@@ -54,6 +54,12 @@ classdef Shell < bulk.BulkData
             %the nodes and returns a single handle for all the patches in
             %the collection.
             
+            hg = [];
+                
+            if isempty(obj.Nodes)
+                return
+            end
+            
             index  = obj.NodesIndex;
             coords = arrayfun(@(ii) obj.Nodes.X(:, index(ii, :)), 1 : size(index, 1), 'Unif', false);
             coords = permute(cat(3, coords{:}), [3, 2, 1]);
