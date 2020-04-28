@@ -477,30 +477,3 @@ end
     end
 
 end
-
-%Logging the progress
-function logger(str, bNewLine, bLiteral)
-%logger Presents the import display to the user.
-
-if nargin < 2
-    bNewLine = true;
-end
-if nargin < 3
-    bLiteral = false;
-end
-
-%Add an EoL
-if bNewLine
-    esc = '\n';
-else
-    esc = '';
-end
-
-%Allow escape characters
-if bLiteral
-    fprintf([str, esc]);
-else
-    fprintf(['%s', esc], str);
-end
-
-end
