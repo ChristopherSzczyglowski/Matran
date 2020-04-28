@@ -643,6 +643,10 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             % In MSC.Nastran a DOF is defined as any non-repeating
             % combination of the numbers [1,2,3,4,5,6].
             
+            if isnumeric(val) && all(val == 0) %Catch for numeric data
+                val = repmat({''}, [1, numel(val)]);
+            end
+            
             assert(iscell(val), ['Expected ''%s'' to be a cell-array ', ...
                 'of DOF identifiers, e.g. ''123456''.'], prpName);
             idx = cellfun(@isempty, val);
