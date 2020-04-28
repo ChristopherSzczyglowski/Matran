@@ -2,7 +2,7 @@ $ spar_beam_props_pc.bdf
 $ 
 $ Description:
 $ - Bulk data file containing the bulk data for the wing spar beam properties. 
-	The beam properties for each beam element are assumed to be piecewise-constant (pc).
+$	The beam properties for each beam element are assumed to be piecewise-constant (pc).
 $
 $ Notes
 $ - The original version of this file can be found at: 
