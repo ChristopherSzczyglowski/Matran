@@ -45,7 +45,9 @@ classdef Constraint < bulk.BulkData
                 case 'SPC'
                     txt = obj.Ci;
                 case 'SPC1'
-                    txt = obj.C;
+                    txt = arrayfun(@(ii) repmat(obj.C(ii), [1, numel(obj.G{ii})]), ...
+                        1 : numel(obj.C), 'Unif', false);
+                    txt = horzcat(txt{:});
                 otherwise
                     error('Update draw method for new constraint cards.');
             end
@@ -60,7 +62,7 @@ classdef Constraint < bulk.BulkData
                 'MarkerEdgeColor', 'k'    , ...
                 'Tag'            , 'Constraints', ...
                 'SelectionHighlight', 'off');
-            if numel(txt) < 5
+            if numel(txt) < 50
                 hT = text(hAx, ...
                     coords(1, :), coords(2, :), coords(3, :), txt, ...
                     'Color'              , hg.MarkerFaceColor, ...
