@@ -54,10 +54,9 @@ if nargin == 0
     end
 end
 
+%Validate
 assert(exist(filename, 'file') == 2, ['File ''%s'' does not exist. Check ', ...
     'the filename and try again.'], filename);
-
-%Check extension
 [~, ~, ext] = fileparts(filename);
 assert(strcmp(ext, '.h5'), '''Filename'' must be the name of a .h5 file');
 
