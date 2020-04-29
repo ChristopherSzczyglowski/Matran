@@ -90,13 +90,23 @@ classdef BeamProp < bulk.BulkData
             prpData       = cell(size(prpNames));            
             prpData(ismember(prpNames, bulkNames)) = bulkData(ismember(bulkNames, prpNames));
             switch obj.CardName
-                case 'PBAR'                    
+                case 'PBAR' 
                     prpData{ismember(prpNames, 'C')}   = vertcat(bulkData{ismember(bulkNames, {'C1', 'C2'})});
                     prpData{ismember(prpNames, 'D')}   = vertcat(bulkData{ismember(bulkNames, {'D1', 'D2'})});
                     prpData{ismember(prpNames, 'E')}   = vertcat(bulkData{ismember(bulkNames, {'E1', 'E2'})});
                     prpData{ismember(prpNames, 'F')}   = vertcat(bulkData{ismember(bulkNames, {'F1', 'F2'})});
                     prpData{ismember(prpNames, 'K')}   = vertcat(bulkData{ismember(bulkNames, {'K1', 'K2'})});
                 case 'PBEAM'
+                    %SO must be "YES" "YESA" or "NO"
+                    %   - Assume true is "YES" and false is "NO"
+                    idxSO = ismember(prpNames, 'SO');
+                    prpData{idxSO} = prpData{idxSO}(1, :); %One value per beam
+                    idxYES = prpData{idxSO} == 1;
+                    prpData{idxSO} = num2cell(prpData{idxSO});
+                    prpData{idxSO}(idxYES)  = {'YES'};
+                    prpData{idxSO}(~idxYES) = {'NO'};
+                    %Combine other terms
+                    %   - TODO - Should be possible to parameterise this!
                     prpData{ismember(prpNames, 'A_A')}   = bulkData{ismember(bulkNames, 'A')}(1, :);
                     prpData{ismember(prpNames, 'I1_A')}  = bulkData{ismember(bulkNames, 'I1')}(1, :);
                     prpData{ismember(prpNames, 'I2_A')}  = bulkData{ismember(bulkNames, 'I2')}(1, :);
