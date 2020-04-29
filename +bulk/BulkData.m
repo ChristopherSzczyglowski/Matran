@@ -405,6 +405,23 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
             
         end
     end
+    methods 
+        function combine(obj)
+            %combine Combines the bulk data from an array of
+            %'bulk.BulkData' objects into a single object.
+            
+            if numel(obj) == 1
+                return
+            end
+            
+            prpNames = obj(1).CurrentBulkDataProps;
+            prpVal   = get(obj, prpNames);
+            prpVal   = arrayfun(@(ii) horzcat(prpVal{:, ii}), ...
+                1 : numel(prpNames), 'Unif', false);
+            set(obj(1), prpNames, prpVal);
+            
+        end
+    end
     
     methods % assigning data during import
         function assignH5BulkData(obj, bulkNames, bulkData)
