@@ -120,7 +120,11 @@ classdef CoordSystem < bulk.BulkData
             hg(1) = drawLines(o, oX, hAx, 'Color', [0, 1, 0], 'LineWidth', 2, 'Tag', 'Coord System X');
             hg(2) = drawLines(o, oY, hAx, 'Color', [0, 0, 1], 'LineWidth', 2, 'Tag', 'Coord System Y');
             hg(3) = drawLines(o, oZ, hAx, 'Color', [1, 0, 0], 'LineWidth', 2, 'Tag', 'Coord System Z');
-                                              
+                             
+            if obj.NumBulk > 20
+                return
+            end
+            
             %Add text annotation for CID numbers            
             text(o(1, :), o(2, :), o(3, :), ...
                 strtrim(cellstr(num2str([obj.CID]'))'), ...
