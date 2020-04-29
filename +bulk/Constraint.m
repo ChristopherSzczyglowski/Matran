@@ -34,6 +34,35 @@ classdef Constraint < bulk.BulkData
         end
     end
     
+    methods % assigning data during import
+        function assignH5BulkData(obj, bulkNames, bulkData)
+            %assignH5BulkData Assigns the object data during the import
+            %from a .h5 file.
+                        
+            prpNames   = obj.CurrentBulkDataProps;
+            
+            %Index of matching bulk data names
+            [~, ind]  = ismember(bulkNames, prpNames);
+            [~, ind_] = ismember(prpNames, bulkNames);
+            
+            %Build the prop data 
+            prpData  = cell(size(prpNames));            
+            prpData(ind(ind ~= 0)) = bulkData(ind_(ind_ ~= 0));            
+            switch obj.CardName                
+                case 'SPC1'
+                    if any(contains(bulkNames, {'FIRST', 'SECOND'}))
+                        %Card is using "THRU" command to specify list
+                        prpData{ismember(prpNames, 'G')} = ...
+                            bulkData{ismember(bulkNames, 'FIRST')} : ...
+                            bulkData{ismember(bulkNames, 'SECOND')};
+                    else
+                        error('Check code');
+                    end                   
+            end                        
+            assignH5BulkData@bulk.BulkData(obj, prpNames, prpData)
+        end
+    end
+    
     methods % visualisation
         function hg = drawElement(obj, hAx)
             %drawElement Draws the constraint objects as a discrete marker

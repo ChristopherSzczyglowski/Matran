@@ -27,9 +27,32 @@ classdef Mass < bulk.BulkData
                 'PropMask'   , {'X', 3, 'I2', 2, 'I3', 3}, ...
                 'AttrList'   , {'X', {'nrows', 3}, 'I2', {'nrows', 2}, 'I3', {'nrows', 3}}, ...
                 'Connections', {'G', 'bulk.Node', 'Nodes', 'CID', 'bulk.CoordSystem', 'CoordSys'});                        
-                        
             varargin = parse(obj, varargin{:});
             preallocate(obj);
+            
+        end
+    end
+    
+    methods% assigning data during import
+        function assignH5BulkData(obj, bulkNames, bulkData)
+            %assignH5BulkData Assigns the object data during the import
+            %from a .h5 file.
+            
+            prpNames   = obj.CurrentBulkDataProps;
+            
+            %Index of matching bulk data names
+            [~, ind]  = ismember(bulkNames, prpNames);
+            [~, ind_] = ismember(prpNames, bulkNames);
+            
+            %Build the prop data
+            prpData  = cell(size(prpNames));
+            prpData(ind(ind ~= 0)) = bulkData(ind_(ind_ ~= 0));            
+            switch obj.CardName                
+                case 'CONM2'
+                     prpData{ismember(prpNames, 'X')} = ...
+                         vertcat(bulkData{ismember(bulkNames, {'X1', 'X2', 'X3'})});                    
+            end
+            assignH5BulkData@bulk.BulkData(obj, prpNames, prpData)
             
         end
     end
