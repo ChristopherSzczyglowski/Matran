@@ -112,7 +112,7 @@ rawFileData = readCharDataFromFile(bulkFilename, logfcn);
 
 if ~isempty(data)
     logfcn(sprintf('Combining bulk data from file ''%s'' and any INCLUDE files...', bulkFilename));
-    combineBulkData(horzcat(FEM, data{:}));
+    combine(horzcat(FEM, data{:}));
 end
 
 %Combine data & diagnostics from INCLUDE data
@@ -186,9 +186,6 @@ logfcn('Extracting bulk data...');
 FEM = bulk.FEModel();
 UnknownBulk = {};
 
-%project folder
-prj = 'bulk';
-
 BulkDataMask = defineBulkMask();
 
 %Extract all card names and continuation entries (for indexing)
@@ -222,19 +219,9 @@ for iCard = 1 : numel(cardNames)
     if nCard == 0 %Catch
         continue
     end
-    
-    %Initialise the card
-    str = [prj, '.', cn];
-    
-    %Check it exists, if not, check the mask for a synonym class.
-    if exist(str, 'class') ~= 8
-        bClass = false;
-        if isfield(BulkDataMask, cn)
-            str = BulkDataMask.(cn);
-            bClass = true;
-        end
-    end
-    
+        
+    [bClass, str] = isMatranClass(cn, BulkDataMask);
+        
     %If the class exists then we can import the data, if not, skip it
     if bClass
         
