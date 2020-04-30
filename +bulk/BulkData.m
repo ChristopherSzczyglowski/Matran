@@ -824,6 +824,11 @@ if ~obj.DynPropDirty
     obj.PreSetVal.(nam) = obj.(nam);
 end
 
+%Use 'double' by default
+if isinteger(val) %TODO - This only occurs when we import from .h5 file. Consider moving it there? 
+    val = double(val);
+end
+
 %Allow the new value to pass, will be checked by 'PostSet' listener
 %
 % If it is the first property in the bulk data entry then it is a mask for
