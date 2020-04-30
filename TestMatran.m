@@ -9,9 +9,12 @@ classdef TestMatran < matlab.unittest.TestCase
     % Detailed Description:
     %	- Available tests:
     %       + Importing models
-    %           ImportFromTPLTextFile
+    %           importFromTPLTextFile
+    %           importFromTextFile
+    %           importFromAutoH5File
     %       + Checking codebase
     %           constructBulk
+    %           drawEmptyBulk
     %   - To run the test 'ImportFromTPLTextFile' the user must set the
     %     preference 'PathToNastranTPL' on their local user profile. This
     %     can  be done via:
@@ -40,6 +43,7 @@ classdef TestMatran < matlab.unittest.TestCase
     % 
     % TODO - Add a test which runs every public method on a new object.
     % Should be no errors!
+    %   TODO - Add a test for dynamicable isequal
     
     %Importing
     properties (TestParameter)
@@ -271,7 +275,7 @@ classdef TestMatran < matlab.unittest.TestCase
             importThenDraw(obj, TPLTextImportFiles);
         end
         function importFromTextFile(obj, TextImportFiles)
-            %importFRomTPLTextFile Attempts to import a FE model from a
+            %importFromTPLTextFile Attempts to import a FE model from a
             %text file using the standard Nastran input format.
             
             %Assume the file is contained in the 'models' directory
@@ -279,7 +283,9 @@ classdef TestMatran < matlab.unittest.TestCase
             importThenDraw(obj, TextImportFiles);
         end        
         function importFromAutoH5File(obj, AutoH5Files)
-            [FEModel, FileMeta] = importH5(AutoH5Files);
+            %importFromAutoH5File Attempts to import a FE model from a
+            %MSC.Nastran HDF5 file.
+            importThenDraw(obj, AutoH5Files);            
         end
     end
     methods (TestMethodTeardown)
@@ -316,9 +322,9 @@ classdef TestMatran < matlab.unittest.TestCase
             %importThenDraw Imports the model from the Nastran text file
             %'filename' and draws the model.
             
-            [FEM, Meta]  = importBulkData(filename);
+            FEM = import_matran(filename, 'Verbose', false);
             
-            obj.UnknownBulk = Meta.UnknownBulk;
+            %obj.UnknownBulk = Meta.UnknownBulk;
             
             hg = draw(FEM);
             

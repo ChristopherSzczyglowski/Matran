@@ -1,4 +1,4 @@
-function  [FEModel, FileMeta] = importH5(filename)
+function  [FEModel, FileMeta] = importH5(filename, logfcn)
 %importH5 Imports the Nastran bulk data from a HDF5 file and returns a 
 %'bulk.FEModel' object containing the data.
 %
@@ -29,25 +29,10 @@ function  [FEModel, FileMeta] = importH5(filename)
 %
 % <end_of_pre_formatted_H1>
 
-FEModel  = [];
-FileMeta = []; %TODO - Change this to record any unrecognised bulk data
-logfcn   = @logger;
-
-%logfcn = @(s, a, b) fprintf('');
-
-%Prompt user if no file is provided
-if nargin == 0
-    [filename, filepath] = uigetfile({'*.h5', 'HDF5 file'}, 'Select a file') ;
-    if isnumeric(filename) && isnumeric(filepath)
-        return
-    else
-        filename = fullfile(filepath, filename);
-    end
+if nargin < 2
+   logfcn = @logger; %default is to print to command window
 end
 
-%Validate
-assert(exist(filename, 'file') == 2, ['File ''%s'' does not exist. Check ', ...
-    'the filename and try again.'], filename);
 [~, ~, ext] = fileparts(filename);
 assert(strcmp(ext, '.h5'), '''Filename'' must be the name of a .h5 file');
 assert(checkH5ForModelBulk(filename), sprintf(['The h5 file ''%s'' did ', ...
@@ -55,6 +40,7 @@ assert(checkH5ForModelBulk(filename), sprintf(['The h5 file ''%s'' did ', ...
     'either 0 or 1 in the run file.'], filename));
 
 FEModel      = bulk.FEModel;
+FileMeta     = [];
 BulkDataMask = defineBulkMask;
 
 logfcn(sprintf('Beginning file read of file ''%s'' ...', filename));
@@ -63,20 +49,8 @@ logfcn(sprintf('Beginning file read of file ''%s'' ...', filename));
 MetaGroup = h5info(filename, '/NASTRAN/INPUT');     
 [FEModel, skippedCards] = extractData(filename, MetaGroup, FEModel, BulkDataMask, logfcn);
 
+FileMeta.SkippedBulk = skippedCards;
 FileMeta.UnknownBulk = strtrim(cellfun(@(x) x(1 : strfind(x, '-') - 1), skippedCards, 'Unif', false));
-
-%Build connections
-makeIndices(FEModel);
-
-%Print a summary 
-printSummary(FEModel, 'LogFcn', logfcn, 'RootFile', filename);
-if isempty(skippedCards)
-    logfcn('All bulk data entries were successfully extracted!');
-else
-    logfcn(sprintf(['The following cards have not been extracted ', ...
-        'from the file ''%s'':\n\n\t%-s\n'], filename, ...
-        sprintf('%s\n\t', skippedCards{:})));
-end
 
 end
 

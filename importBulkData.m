@@ -1,4 +1,4 @@
-function [FEModel, FileMeta] = importBulkData(bulkFilename)
+function [FEModel, FileMeta] = importBulkData(filename, logfcn)
 %importBulkData Imports the Nastran bulk data from a ASCII text file and
 %returns a 'bulk.FEModel' object containing the data.
 %
@@ -33,47 +33,15 @@ function [FEModel, FileMeta] = importBulkData(bulkFilename)
 % we preallocate the objects and read the file in chunks instead of reading
 % the whole file into the memory.
 
-FEModel  = [];
-logfcn   = @logger;
-validExt = {'.dat', '.bdf'};
-
-%Prompt user if no file is provided
-if nargin == 0
-    exts   = strjoin(strcat('*', validExt), ';');
-    str    = sprintf('Nastran bulk data files (%s)', strjoin(strcat('*', validExt), ','));
-    prompt = 'Select a Nastran bulk data file';
-    [bulkFilename, filepath] = uigetfile({exts, str}, prompt);
-    if isnumeric(bulkFilename) && isnumeric(filepath)
-        return
-    else
-        bulkFilename = fullfile(filepath, bulkFilename);
-    end
+if nargin < 2
+   logfcn = @logger; %default is to print to command window
 end
-
-%Validate
-assert(exist(bulkFilename, 'file') == 2, ['File ''%s'' does not exist. Check ', ...
-    'the filename and try again.'], bulkFilename);
-[~, ~, ext] = fileparts(bulkFilename);
-assert(any(strcmp(ext, validExt)), ['Expected the file extension to be ', ...
-    'one of the following:\n\n\t%s'], strjoin(validExt, '\n\t'));
 
 %Import the data and return the 'bulk.FEModel' object
-[FEModel, skippedCards] = importBulkDataFromFile(bulkFilename, logfcn);
+[FEModel, skippedCards] = importBulkDataFromFile(filename, logfcn);
 
+FileMeta.SkippedBulk = skippedCards;
 FileMeta.UnknownBulk = strtrim(cellfun(@(x) x(1 : strfind(x, '-') - 1), skippedCards, 'Unif', false));
-
-%Build connections
-makeIndices(FEModel);
-
-%Print a summary 
-printSummary(FEModel, 'LogFcn', logfcn, 'RootFile', filename);
-if isempty(skippedCards)
-    logfcn('All bulk data entries were successfully extracted!');
-else
-    logfcn(sprintf(['The following cards have not been extracted ', ...
-        'from the file ''%s'':\n\n\t%-s\n'], bulkFilename, ...
-        sprintf('%s\n\t', skippedCards{:})));
-end
 
 end
 
