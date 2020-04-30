@@ -34,7 +34,7 @@ classdef AeroelasticSpline < bulk.BulkData
             
             %Grab the panel data
             PanelData = getPanelData(obj.AeroPanel);
-            if isempty(PanelData)
+            if isempty(PanelData) || any(cellfun(@isempty, {PanelData.Coords}))
                 return
             end
             

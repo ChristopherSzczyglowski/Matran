@@ -55,7 +55,7 @@ classdef AeroPanel < bulk.BulkData
             
             %Grab the panel data      
             PanelData = getPanelData(obj);             
-            if isempty(PanelData) || isempty(PanelData.Coords)
+            if isempty(PanelData) || any(cellfun(@isempty, {PanelData.Coords}))
                 return
             end
             
@@ -98,6 +98,14 @@ classdef AeroPanel < bulk.BulkData
             if any(all([obj.NCHORD == 0 ; obj.LCHORD == 0]))
                 warning(['Panel increments in chordwise direction ', ...
                     'could not be defined.']);
+                return
+            end
+            if any(obj.LSPAN ~= 0) && isempty(obj.SpanDivision)
+                warning('FLFACT entry not referenced in AeroPanel object. Check ''makeIndices'' function.');
+                return
+            end
+            if any(obj.LCHORD ~= 0) && isempty(obj.ChordDivision)
+                warning('FLFACT entry not referenced in AeroPanel object. Check ''makeIndices'' function.');
                 return
             end
             
