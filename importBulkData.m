@@ -27,6 +27,11 @@ function [FEModel, FileMeta] = importBulkData(bulkFilename)
 %	- Initial function:
 %
 % <end_of_pre_formatted_H1>
+%
+% TODO - Look at whether we can take a sneak peak through all the files by
+% only extracting the first 8 characters to understand file contents. Then
+% we preallocate the objects and read the file in chunks instead of reading
+% the whole file into the memory.
 
 FEModel  = [];
 logfcn   = @logger;
@@ -60,13 +65,8 @@ FileMeta.UnknownBulk = strtrim(cellfun(@(x) x(1 : strfind(x, '-') - 1), skippedC
 %Build connections
 makeIndices(FEModel);
 
-%Print a summary of all the data contained in the file and any
-%embedded files
-summary = summarise(FEModel);
-logfcn(sprintf('Extraction summary :\n'));
-logfcn(sprintf(['The following cards have been extracted ', ...
-    'successfully from the file ''%s'':\n\t%-s\n'], ...
-    bulkFilename, sprintf('%s\n\t', summary{:})));
+%Print a summary 
+printSummary(FEModel, 'LogFcn', logfcn, 'RootFile', filename);
 if isempty(skippedCards)
     logfcn('All bulk data entries were successfully extracted!');
 else
@@ -116,7 +116,6 @@ if ~isempty(data)
 end
 
 %Combine data & diagnostics from INCLUDE data
-% cellfun(@(x) addBulk(FEM , x), data    , 'Unif', false);
 unknownBulk = [unknownBulk, cat(2, leftover{:})];
 
 end

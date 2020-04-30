@@ -135,6 +135,63 @@ classdef FEModel < matlab.mixin.SetGet & mixin.Dynamicable
             end
             
         end
+        function printSummary(obj, varargin)
+           %printSummary Prints a summary of the model.
+           %
+           % Syntax:
+           %    - Print a summary of the model to the command window
+           %        >> printSummary(obj)
+           %    - Print a summary of the model to the command window and
+           %      provide a reference to the parent file where the data was
+           %      imported from.
+           %        >> printSummary(obj, 'RootFile', 'sample_file.bdf');
+           %    - Print a summary of the model to an external file by
+           %      providing a file identifier.
+           %        >> fid = fopen('file.txt', 'w');
+           %        >> printSummary(obj, 'FileID', fid);
+           %    - Print a summary of the model using a user supplied log
+           %      function.
+           %        >> log_fcn = @(s) fprintf(fid, '%s', s);
+           %        >> printSummary(obj, 'LogFcn', log_fcn);
+           %
+           % Parameters:
+           %    'RootFile' - Name of a file containing the model data.
+           %    'FileID'   - Valid file identifier for writing data.
+           %    'LogFcn'   - Function handle for writing the data.
+           
+           p = inputParser;
+           addParameter(p, 'RootFile', '', @(x)validateattributes(x, ...
+               {'char'}, {'row'}));
+           addParameter(p, 'FileID'  , [], @(x)validateattributes(x, ...
+               {'numeric'}, {'scalar', 'positive', 'finite', 'real', 'nonnan'}));
+           addParameter(p, 'LogFcn'  , [], @(x) isa(x, 'function_handle')); 
+           parse(p, varargin{:});
+           
+           log_fcn = p.Results.LogFcn;
+           fid     = p.Results.FileID;
+           file    = p.Results.RootFile;
+           
+           if isempty(log_fcn)
+               if isempty(fid)
+                   log_fcn = @(s) fprintf(s);       % command window
+               else
+                   log_fcn = @(s) fprintf(fid, s);  % external file
+               end
+           end
+                      
+           summary = summarise(obj);
+           
+           if isempty(file) %Print tailored summary message
+               log_fcn(sprintf('Model contents:\n\n'));
+               log_fcn(sprintf('\t%-s\n', sprintf('%s\n\t', summary{:})));
+           else
+               log_fcn(sprintf('Extraction summary:\n'));
+               log_fcn(sprintf(['The following cards have been extracted ', ...
+                   'successfully from the file ''%s'':\n\t%-s\n'], ...
+                   file, sprintf('%s\n\t', summary{:})));
+           end           
+
+        end
     end
     methods
         function combine(obj)
@@ -203,7 +260,7 @@ classdef FEModel < matlab.mixin.SetGet & mixin.Dynamicable
             end
             hg = horzcat(hg{:})';
             
-            legend(hAx, hg, get(hg, {'Tag'}), 'ItemHitFcn', @toggleVisible);
+            legend(hAx, hg, get(hg, {'Tag'}), 'ItemHitFcn', @cbToggleVisible);
             axis(hAx, 'equal');
             
         end
@@ -212,8 +269,9 @@ classdef FEModel < matlab.mixin.SetGet & mixin.Dynamicable
 end
 
 %Callbacks for UI
-function toggleVisible(~, evt)
-%toggleVisible Toggles the visibility of a graphic object.
+function cbToggleVisible(~, evt)
+%cbToggleVisible Toggles the visibility of a graphic object when it is
+%clicked in the legend.
 
 if ~isprop(evt.Peer, 'Visible')
     return

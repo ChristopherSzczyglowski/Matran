@@ -68,13 +68,8 @@ FileMeta.UnknownBulk = strtrim(cellfun(@(x) x(1 : strfind(x, '-') - 1), skippedC
 %Build connections
 makeIndices(FEModel);
 
-%Print a summary of all the data contained in the file and any
-%embedded files
-summary = summarise(FEModel);
-logfcn(sprintf('Extraction summary :\n'));
-logfcn(sprintf(['The following cards have been extracted ', ...
-    'successfully from the file ''%s'':\n\t%-s\n'], ...
-    filename, sprintf('%s\n\t', summary{:})));
+%Print a summary 
+printSummary(FEModel, 'LogFcn', logfcn, 'RootFile', filename);
 if isempty(skippedCards)
     logfcn('All bulk data entries were successfully extracted!');
 else
