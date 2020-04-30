@@ -46,7 +46,7 @@ classdef TestMatran < matlab.unittest.TestCase
     %   TODO - Add a test for dynamicable isequal
     
     %Importing
-    properties (TestParameter)
+    properties (TestParameter) % model files
         %Files from the Nastran TPL for testing import from raw text file.
         TPLTextImportFiles = { ...
             '\doc\dynamics\bd03bar1.dat', ... %simple beam
@@ -63,6 +63,13 @@ classdef TestMatran < matlab.unittest.TestCase
             'uob_HARW_wide_field\sol_103_pod_fwd_pc.dat'};  %HARW wing (wide-field)
         %Auto-generated .h5 files from the 'models' folder
         AutoH5Files = getH5files;
+    end
+    
+    properties (TestParameter) % import parameters
+        %Function handle to logging function
+        LogFcn  = {@logger};
+        %Toggle printing output 
+        Verbose = {true, false};
     end
     properties (SetAccess = private)
         TestFigure
@@ -208,30 +215,7 @@ classdef TestMatran < matlab.unittest.TestCase
                 end
             end
             
-        end
-        function drawEmptyBulk(obj)
-            %drawEmptyBulk Checks that each bulk data object can be
-            %drawn from a basic constructor call.
-            
-            obj.TestFigure = figure;
-            hAx = axes('Parent', obj.TestFigure);
-            
-            %Get list of all bulk objects
-            bulkClasses = obj.getBulkClasses;
-            
-            %Make an instance of each object with no inputs
-            for ii = 1 : numel(bulkClasses)
-                func = str2func(bulkClasses{ii});
-                %Initiate with no inputs
-                bulkObj = func();
-                %Make sure we can draw it
-                mc = metaclass(bulkObj);
-                if ~ismember('drawElement', {mc.MethodList.Name})
-                    continue
-                end
-                drawElement(bulkObj, hAx);
-            end            
-        end
+        end        
     end
     methods (Static)
         function bulkClasses = getBulkClasses
@@ -258,8 +242,63 @@ classdef TestMatran < matlab.unittest.TestCase
         end
     end
     
-    %Importing
+    %Test object methods 
     methods (Test)
+        function drawEmptyBulk(obj)
+            %drawEmptyBulk Checks that each bulk data object can be
+            %drawn from a basic constructor call.
+            
+            obj.TestFigure = figure;
+            hAx = axes('Parent', obj.TestFigure);
+            
+            %Get list of all bulk objects
+            bulkClasses = obj.getBulkClasses;
+            
+            %Make an instance of each object with no inputs
+            for ii = 1 : numel(bulkClasses)
+                func = str2func(bulkClasses{ii});
+                %Initiate with no inputs
+                bulkObj = func();
+                %Make sure we can draw it
+                mc = metaclass(bulkObj);
+                if ~ismember('drawElement', {mc.MethodList.Name})
+                    continue
+                end
+                drawElement(bulkObj, hAx);
+            end
+        end
+        function testDynamicable_isequal_self_empty(obj)
+            
+            %Check itself against itself
+            DynA = mixin.Dynamicable;
+            assert(isequal(DynA, DynA), '''isequal'' failed for same object');      
+        end
+        function testDynamicable_isequal_two_empty(obj)
+            
+            %Check itself against another empty
+            DynA = mixin.Dynamicable;
+            DynB = mixin.Dynamicable;            
+            assert(isequal(DynA, DynB), '''isequal'' failed for two empties');            
+        end
+        function testDynamicable_isequal_bulk(obj)
+            
+            %Get list of all bulk objects
+            bulkClasses = obj.getBulkClasses;
+            
+            %Make an instance of each object and check equality
+            for ii = 1 : numel(bulkClasses)                
+                func = str2func(bulkClasses{ii});                
+                BulkA = func();
+                BulkB = func();
+                assert(isequal(BulkA, BulkB), sprintf(['''isequal'' ', ...
+                    'failed for two empty bulk objects of class %s'] , ...
+                    bulkClasses{ii})); 
+            end
+        end
+    end
+
+    %Importing
+    methods (Test, ParameterCombination = 'sequential')
         function importFromTPLTextFile(obj, TPLTextImportFiles)
             %importFRomTPLTextFile Attempts to import a FE model from a
             %text file contained in the Nastran Test Problem Library (TPL).
@@ -286,6 +325,16 @@ classdef TestMatran < matlab.unittest.TestCase
             %importFromAutoH5File Attempts to import a FE model from a
             %MSC.Nastran HDF5 file.
             importThenDraw(obj, AutoH5Files);            
+        end
+    methods (Test, ParameterCombination = 'exhaustive') 
+        function testImportParameters(obj, LogFcn, Verbose)
+            %testImportParameters Tests the different import parameters for
+            %the 'import_matran' function.
+            
+            h5Files  = obj.AutoH5Files;
+            filename = h5Files{1};
+            
+            import_matran(filename, 'Verbose', Verbose, 'LogFcn', LogFcn);
         end
     end
     methods (TestMethodTeardown)
@@ -318,7 +367,7 @@ classdef TestMatran < matlab.unittest.TestCase
         end 
     end
     methods (Access = private) % importThenDraw
-        function importThenDraw(obj, filename)
+        function FEM = importThenDraw(obj, filename)
             %importThenDraw Imports the model from the Nastran text file
             %'filename' and draws the model.
             
@@ -343,7 +392,8 @@ classdef TestMatran < matlab.unittest.TestCase
 end
 
 function h5FileList = getH5files
-%Get the list of .h5 files in the 'models\auto_generated_h5_data' directory
+%getH5files Get the list of .h5 files in the
+%'models\auto_generated_h5_data' directory.
 
 path = 'models\auto_generated_h5_data';
 Contents = dir(path);

@@ -38,7 +38,7 @@ classdef Dynamicable < dynamicprops
         DynamicProps
     end
     
-    methods (Access = protected)
+    methods (Access = protected) % add/remove dynamic properties
         function p = addDynamicProp(obj, prpName)
             %addDynamicProp Adds a dynamic property to the object and
             %stores a handle to the meta.dynamicproperty object in the
@@ -78,6 +78,46 @@ classdef Dynamicable < dynamicprops
                 return
             end
             p = obj.DynamicProps(ismember({obj.DynamicProps.Name}, prpName)); 
+        end
+    end
+        
+    methods % overloaded methods for dynamic object implementation
+        function tf = isequal(objA, objB)
+            %isequal Checks whether the two objects have the same contents.
+                        
+            if eq(objA, objB) %Use superclass method
+                tf = true;
+                return
+            else
+                tf = false;
+            end
+            
+            if ~strcmp(class(objA), class(objB))% check class
+                return
+            end
+            propA = properties(objA);
+            propB = properties(objB);
+            if ~isequal(propA, propB) % check property names
+                return
+            end
+            if isempty(propA) && isempty(propB)
+                tf = true;
+                return
+            end
+            
+            %Check top-level values
+%             valA = get(objA, propA);
+%             valB = get(objB, propB);
+%             if isequal(valA, valB)
+%                 tf = true;
+%                 return
+%             end
+            
+            %Check values in every property
+            idx = arrayfun(@(ii) isequal( ...
+                objA.(propA{ii}), objB.(propB{ii})), 1 : numel(propA));
+            tf = all(idx);
+                
         end
     end
     
