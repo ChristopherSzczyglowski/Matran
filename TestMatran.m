@@ -78,7 +78,9 @@ classdef TestMatran < matlab.unittest.TestCase
     
     properties (Dependent)
         %Path to the Nastran TPL. User dependent via setpref/getpref
-        PathToNastranTPL
+        PathToNastranTPL 
+        %Unison of 'TPLTextImportFiles' and 'TextImportFiles'
+        AllTextImportFiles
     end
     
     methods % set / get
@@ -93,7 +95,10 @@ classdef TestMatran < matlab.unittest.TestCase
                     setpref('matran', 'PathToNastranTPL', val);
                 end
             end
-        end        
+        end
+        function val = get.AllTextImportFiles(obj)
+            val = getAllTextImportFiles(obj);
+        end
     end
     
     methods % construction
@@ -298,7 +303,7 @@ classdef TestMatran < matlab.unittest.TestCase
     end
 
     %Importing
-    methods (Test, ParameterCombination = 'sequential')
+    methods (Test, ParameterCombination = 'exhaustive')
         function importFromTPLTextFile(obj, TPLTextImportFiles)
             %importFRomTPLTextFile Attempts to import a FE model from a
             %text file contained in the Nastran Test Problem Library (TPL).
@@ -326,7 +331,42 @@ classdef TestMatran < matlab.unittest.TestCase
             %MSC.Nastran HDF5 file.
             importThenDraw(obj, AutoH5Files);            
         end
-    methods (Test, ParameterCombination = 'exhaustive') 
+        function importBdfAndH5ThenCompare(obj, AutoH5Files)
+            %importBdfAndH5ThenCompare Attempts to import a FE model from a
+            %text file from the TPL and the associated MSC.Nastran HDF5 
+            %file, then compares the two FEMs for equality.
+            
+            %Get the corresponding bdf import file
+            [~, nam, ~]  = fileparts(AutoH5Files);
+            allTextFiles = obj.AllTextImportFiles;
+            [~, txtNames, ~] = obj.getFileParts(allTextFiles);     
+            idx = ismember(strcat(txtNames, '_temp'), nam);
+            assert(nnz(idx) == 1, sprintf(['Unable to find the text '  , ...
+                'import file that corresponds to the .h5 file ''%s''.'], ...
+                AutoH5Files));
+            txtFile = allTextFiles{idx};
+            
+            %Import then compare
+            FEM_bdf = importThenDraw(obj, txtFile);            
+            FEM_h5  = importThenDraw(obj, AutoH5Files);
+            if ~isequal(FEM_bdf, FEM_h5)
+                %If the FEMs are inequal it is likely 
+                prp_bdf = FEM_bdf.BulkDataNames;
+                prp_h5  = FEM_h5.BulkDataNames;
+                prp_all = unique([prp_bdf, prp_h5]);
+                idxH5  = ~ismember(prp_all, prp_h5);
+                idxBDF = ~ismember(prp_all, prp_bdf);
+                if any(idxH5) || any(idxBDF)
+                    error('matlab:matran:unequal_FEM', ['The two FEMs are ', ...
+                        'not equal.\n\n\tH5 file: %s\n\tBDF file: %s\n\n\t', ...
+                        'Bulk not in the h5 file:\n\t- %s\n\n\t', ...
+                        'Bulk not in the bdf file:\n\t- %s\n\n'], ...
+                        AutoH5Files, txtFile, ...
+                        strjoin(prp_all(idxH5) , ', '), ...
+                        strjoin(prp_all(idxBDF), ', '));
+                end
+            end
+        end
         function testImportParameters(obj, LogFcn, Verbose)
             %testImportParameters Tests the different import parameters for
             %the 'import_matran' function.
@@ -364,7 +404,35 @@ classdef TestMatran < matlab.unittest.TestCase
                     validatestring(filename, {'tpl', 'model'});
             end            
             filename = fullfile(loc, filename);
-        end 
+       end 
+       function txtFiles = getAllTextImportFiles(obj, bSort)
+           %getAllTextImportFiles Returns the complete list of the TPL and
+           %MODEL import files.
+           %
+           % If 'bSort' = true the text import files are matched against
+           % the list of .h5 files returned by 'getH5files'.
+           
+           if nargin < 2
+               bSort = false;
+           end
+           tplFiles = getFilePath(obj, obj.TPLTextImportFiles, 'tpl');
+           mdlFiles = getFilePath(obj, obj.TextImportFiles   , 'model');
+           txtFiles = horzcat(tplFiles, mdlFiles);
+           
+           if bSort %Sort w.r.t h5 file list
+               h5Files  = getH5files;
+               %TODO - Run check to see what files are missing.
+               assert(numel(txtFiles) == numel(h5Files), ['Expected '   , ...
+                   'there to be the same number of .bdf and .h5 files. ', ...
+                   'Make sure all text import cases have been run to '  , ...
+                   'generate the corresponding .h5 files.']);
+               %Get the name of each file and use it to sort the list
+               [~, bdfNames, ~] = obj.getFileParts(txtFiles);
+               [~, index]       = sort(bdfNames);
+               txtFiles         = txtFiles(index);
+           end
+           
+       end
     end
     methods (Access = private) % importThenDraw
         function FEM = importThenDraw(obj, filename)
@@ -389,15 +457,33 @@ classdef TestMatran < matlab.unittest.TestCase
         end
     end
     
+    methods (Static)
+        function [path, nam, ext] = getFileParts(files)
+            %getFileParts Returns a cell-array of file paths, names and
+            %extensions from a cell-array of fully-qualified files.
+            ind_sep = cellfun(@(x) strfind(x, filesep), files, 'Unif', false);
+            ind_ext = cellfun(@(x) strfind(x, '.')    , files, 'Unif', false);
+            ind_sep(cellfun(@isempty, ind_sep)) = {0};
+            ind_sep = cellfun(@max, ind_sep);
+            ind_ext = cellfun(@max, ind_ext);
+            path = arrayfun(@(ii) files{ii}(1 : ind_sep(ii)), ...
+                1 : numel(ind_sep), 'Unif', false);
+            nam  = arrayfun(@(ii) files{ii}(ind_sep(ii) + 1 : ind_ext(ii) - 1), ...
+                1 : numel(ind_sep), 'Unif', false);
+            ext  = arrayfun(@(ii) files{ii}(ind_ext(ii) : end), ...
+                1 : numel(ind_sep), 'Unif', false);
+        end
+    end
+    
 end
 
 function h5FileList = getH5files
 %getH5files Get the list of .h5 files in the
-%'models\auto_generated_h5_data' directory.
+%'models\auto_generated_h5_data' directory sorted in alphabetical order.
 
 path = 'models\auto_generated_h5_data';
 Contents = dir(path);
 idx = endsWith({Contents.name}, '.h5');
-h5FileList = fullfile(path, {Contents(idx).name});
+h5FileList = fullfile(path, sort({Contents(idx).name}));
 
 end
