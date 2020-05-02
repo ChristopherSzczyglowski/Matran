@@ -43,8 +43,8 @@ function varargout = import_matran(filename, varargin)
 %	- Initial function:
 %
 % <end_of_pre_formatted_H1>
-%
-% TODO - Add a 'verbose' argument to allow silent import 
+
+varargout = {};
 
 %type, descriptor, extensions, import function
 prmpt = 'Select a file to import';
@@ -58,6 +58,9 @@ if nargin < 1 || isempty(filename)
    filename = []; 
 end
 [filename, import_fcn, log_fcn] = parse_inputs(prmpt, file_map, filename, varargin{:});
+if isempty(filename)
+    return
+end
 
 %Import the data
 [MatranData, Meta] = import_fcn(filename, log_fcn);
@@ -89,12 +92,37 @@ function [filename, import_fcn, log_fcn] = parse_inputs(prmpt, file_map, filenam
 %parse_inputs Checks the user inputs and returns the file name, import
 %function handle and logging function handle.
 
+import_fcn = [];
+
+%Parse parameters
+p = inputParser;
+addParameter(p, 'LogFcn' , @logger, @(x)isa(x, 'function_handle'));
+addParameter(p, 'Verbose', true   , @(x)validateattributes(x, {'logical'}, {'scalar'})); 
+parse(p, varargin{:});
+if p.Results.Verbose
+    log_fcn = p.Results.LogFcn;
+else
+    log_fcn = @(s, a, b) fprintf(''); %dummy function 
+end
+
+%Number of categories of files we are dealing with
+%   - e.g. input data, results, etc.
+nType    = size(file_map, 1); 
+
 if isempty(filename) %Ask the user
-    exts   = cellfun(@(x) strcat('*', x), file_map{2}, 'Unif', false);
-    str    = arrayfun(@(ii) sprintf('%s (%s)', file_map{1}{ii}, strjoin(strcat(exts{ii}, ','))), 1 : numel(file_map{1}), 'Unif', false);
-    exts   = cellfun(@(x) strjoin(x, '; '), exts, 'Unif', false);
-    [filename, filepath] = uigetfile([exts ; str]', prmpt);
-    if isnumeric(filename) && isnumeric(filepath)
+    %Make the file-extension mapping for uigetfile
+    strs = cell(1, nType);
+    exts = cell(1, nType);
+    for jj = 1 : nType
+       ext_      = cellfun(@(x) strcat('*', x), file_map{jj, 2}, 'Unif', false);
+       strs{jj}  = arrayfun(@(ii) sprintf('%s (%s)', file_map{jj, 1}{ii}, ...
+            strjoin(strcat(ext_{ii}, ','))), 1 : numel(file_map{jj, 1}), 'Unif', false);
+       exts{jj}  = cellfun(@(x) strjoin(x, '; '), ext_, 'Unif', false);
+    end
+    %Ask the user where the file is
+    [filename, filepath] = uigetfile([horzcat(exts{:}) ; horzcat(strs{:})]', prmpt);
+    if isnumeric(filename) && isnumeric(filepath)    
+        filename = [];
         return
     else
         filename = fullfile(filepath, filename);
@@ -113,7 +141,6 @@ assert(any(strcmp(ext, allValidExt)), ['Expected the file to have one ', ...
     'of the following extensions:\n\n\t%s'], strjoin(allValidExt, '\n\t'));
 
 %Associate extension with a particular row in the map
-nType    = size(file_map, 1);
 idx_type = false(nType, 1);
 for ii = 1 : nType
     temp = file_map{ii, 2};
@@ -123,18 +150,6 @@ end
 %Find the import function that corresponds to this extension
 idx_fcn = cellfun(@(ext_list) any(contains(ext_list, ext)), listValidExt);
 import_fcn = file_map{idx_type, 3}{idx_fcn};
-
-%Parse parameters
-p = inputParser;
-addParameter(p, 'LogFcn' , @logger, @(x)isa(x, 'function_handle'));
-addParameter(p, 'Verbose', true   , @(x)validateattributes(x, {'logical'}, {'scalar'})); 
-parse(p, varargin{:});
-
-if p.Results.Verbose
-    log_fcn = p.Results.LogFcn;
-else
-    log_fcn = @(s, a, b) fprintf(''); %dummy function 
-end
 
 end
 
