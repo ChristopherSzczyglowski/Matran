@@ -1,0 +1,75 @@
+$ panel_mass.bdf
+$ 
+$ Description:
+$ - Bulk data file containing the mass information for the aerodynamic panels 
+$   which were attached to the HARW spar.
+$
+$ Notes
+$ - The original version of this file can be found at: 
+$   \\rdsfcifs.acrc.bris.ac.uk\AWI_HARW_Test_Data\Documents\Design\NastranModel\FinalWing\noPod
+$ - The mass information can be verified by checking the CATIA model at the following location:
+$
+$ - The original NASTRAN file contained all of the bulk data in a single input file, meaning that
+$   the results for the wing spar static tests could not be validated without commenting out the
+$   mass information for the aerodynamic panels. To make validation easier this information has 
+$   been moved to this file, and it can be included in the model via a Nastran INCLUDE statement.
+$
+$ Original Author: Dr Guillaume Francois
+$ Notes by       : Dr Christopher Szczyglowski
+$
+$ MSC.Nastran input file created on February  22, 2018 at 16:49:01 by
+$ Patran 2017.0.2
+$ Linear Static Analysis, Database
+$ Direct Text Input for Bulk Data
+$
+$ The original version of this file can be found at: 
+$ \\rdsfcifs.acrc.bris.ac.uk\AWI_HARW_Test_Data\Documents\Design\NastranModel\FinalWing\noPod
+$
+CONM2*  10001           6               0               6.600000E-01    
+*       -1.933000E-03   -2.644000E-03   -7.817000E-03   
+*       2.492458E-03    2.317500E-05    3.794732E-03    1.172000E-06    
+*       -5.220000E-07   6.068778E-03    
+CONM2*  10002           18              0               5.890000E-01    
+*       -3.295000E-03   -6.810000E-04   -7.269000E-03   
+*       2.077749E-03    -8.456000E-06   3.086827E-03    2.764000E-06    
+*       -2.302000E-06   4.978996E-03    
+CONM2*  10003           30              0               5.090000E-01    
+*       -6.305000E-03   -1.532000E-03   -6.181000E-03   
+*       1.721373E-03    -1.750000E-06   2.372646E-03    5.285000E-06    
+*       -7.110000E-07   3.941013E-03    
+CONM2*  10004           42              0               4.810000E-01    
+*       -4.906000E-03   -1.509000E-03   -7.239000E-03   
+*       1.638942E-03    -1.697000E-06   2.095653E-03    5.100000E-08    
+*       -1.060000E-06   3.611710E-03    
+CONM2*  10005           54              0               4.600000E-01    
+*       -7.815000E-03   -1.399000E-03   -6.623000E-03   
+*       1.606785E-03    -6.905000E-06   1.716526E-03    -1.478000E-06   
+*       5.740000E-07    3.219597E-03    
+CONM2*  10006           66              0               4.360000E-01    
+*       -7.735000E-03   -1.164000E-03   -6.411000E-03   
+*       1.498979E-03    -8.527000E-06   1.439988E-03    -4.164000E-06   
+*       -1.096000E-06   2.857230E-03    
+CONM2*  10007           78              0               3.910000E-01    
+*       -8.653000E-03   -1.253000E-03   -6.411000E-03   
+*       1.338423E-03    -7.506000E-06   1.143536E-03    -3.868000E-06   
+*       -1.161000E-06   2.421688E-03    
+CONM2*  10008           90              0               3.670000E-01    
+*       -1.013900E-02   -5.580000E-04   -5.943000E-03   
+*       1.233322E-03    -8.357000E-06   9.172818E-04    -4.246000E-06   
+*       -3.379000E-06   2.103345E-03    
+CONM2*  10009           102             0               3.500000E-01    
+*       -1.078700E-02   -1.412000E-03   -5.437000E-03   
+*       1.711168E-03    -6.676000E-06   7.595180E-04    -5.196000E-06   
+*       -1.476000E-06   1.893740E-03    
+CONM2*  10010           114             0               6.330000E-01    
+*       -4.529000E-03   -3.096000E-03   1.070000E-04    
+*       2.121325E-03    -3.385000E-06   1.885503E-03    -1.311000E-06   
+*       -1.011000E-06   3.924146E-03    
+CONM2*  10011           126             0               2.530000E-01    
+*       -1.423500E-02   -2.008000E-03   -4.657000E-03   
+*       8.461190E-04    -5.887000E-06   4.172570E-04    -3.300000E-06   
+*       -1.037000E-06   1.245706E-03    
+CONM2*  10012           138             0               2.150000E-01    
+*       -1.192200E-02   -5.000000E-03   -4.284000E-03   
+*       7.018330E-04    -4.274000E-06   3.077090E-04    -2.462000E-06   
+*       2.770000E-07    9.982690E-04    
