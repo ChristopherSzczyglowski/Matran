@@ -43,7 +43,7 @@ classdef TestMatran < matlab.unittest.TestCase
     % 
     % TODO - Add a test which runs every public method on a new object.
     % Should be no errors!
-    %   TODO - Add a test for dynamicable isequal
+    % TODO - Get log file working
     
     %Importing
     properties (TestParameter) % model files
@@ -60,14 +60,14 @@ classdef TestMatran < matlab.unittest.TestCase
         %Custom files which will be shipped with the repo
         TextImportFiles = { ...
             'uob_HARW\wing_model_R.bdf', ...                %HARW wing
-            'uob_HARW_wide_field\sol_103_pod_fwd_pc.dat'};  %HARW wing (wide-field)
+            'uob_HARW_wide_field\sol_103_pod_fwd_pc.dat'};  %HARW wing (wide-field)       
         %Auto-generated .h5 files from the 'models' folder
         AutoH5Files = getH5files;
     end
     
     properties (TestParameter) % import parameters
         %Function handle to logging function
-        LogFcn  = {@logger};
+        LogFcn  = {@logger}; %, 'diary.txt'};
         %Toggle printing output 
         Verbose = {true, false};
     end
@@ -110,14 +110,16 @@ classdef TestMatran < matlab.unittest.TestCase
     
     methods % construction
         function obj = TestMatran(varargin)
-            
+                        
             p = inputParser;
             addParameter(p, 'CheckBulkCoverage', false, @(x)validateattributes(x, {'logical'}, {'scalar'}));
             parse(p, varargin{:});
-            
+                        
             if p.Results.CheckBulkCoverage
                 checkBulkCoverage(obj);
             end
+            
+            sldiagviewer.diary
             
         end
     end
@@ -381,7 +383,18 @@ classdef TestMatran < matlab.unittest.TestCase
             h5Files  = obj.AutoH5Files;
             filename = h5Files{1};
             
+            if ischar(LogFcn)
+                fid = fopen(LogFcn, 'w');
+                LogFcn = @(fid)logger([], [], [], fid);
+                bClose = true;
+            else
+                bClose = false;
+            end
+            
             import_matran(filename, 'Verbose', Verbose, 'LogFcn', LogFcn);
+            if bClose
+                fclose(fid);
+            end
         end
     end
     methods (TestMethodTeardown)

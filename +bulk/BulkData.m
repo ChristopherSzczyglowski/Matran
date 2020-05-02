@@ -355,6 +355,10 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dyn
                 dynProps = {BulkDataInfo.Connections.DynProp};
                 addDynamicProp(obj, dynProps);
                 addDynamicProp(obj, strcat(dynProps, 'Index'));
+                %Initialise the connection as an empty object - TODO cater
+                %for the case where we have bulk names not classes
+                %vals = cellfun(@(x) eval([x, '.empty']), {BulkDataInfo.Connections.Type}, 'Unif', false);
+                %set(obj, dynProps, vals);
             end
             
             %Hack the set methods for the dynamic properties using
