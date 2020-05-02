@@ -1,18 +1,4 @@
-function setupMatran
-%setupMatran Adds the parent folder to the path so that the Matran packages
-%can be run without installing Matran as a package.
-%
-% Syntax:
-%	- Add the parent folder to the path:
-%       >> setupMatran
-%
-% Detailed Description:
-%	- Detailed explanation of the function and how it works...
-%
-% See also: addpath
-%
-% References:
-%	[1].
+%add_sandbox Sets up the development environment for the MATRAN sandbox.
 %
 % Author    : Christopher Szczyglowski
 % Email     : chris.szczyglowski@gmail.com
@@ -24,16 +10,19 @@ function setupMatran
 %
 % Revision: 1.0 08-Mar-2020 16:04:00
 %	- Initial function:
+% Revision: 2.0 02-May-2020 12:36:00
+%   - Changed to script and updated package folders to add to path.
+% 
 %
 % <end_of_pre_formatted_H1>
 
 %Where are we?
 loc = mfilename('fullpath');
+sandbox_loc = fileparts(loc);
 
-%Matran folder is two levels aboove
-matran_loc = fileparts(fileparts(loc));
+%Add the development tools
+addpath(fullfile(sandbox_loc, 'dev_tools'));
+addpath(fullfile(sandbox_loc, 'unit_testing'));
 
-%Add to the path but not all subfolders
-addpath(matran_loc);
-
-end
+%Add the Matran code
+addpath(fullfile(sandbox_loc, 'tbx', 'matran'));
