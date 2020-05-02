@@ -5,7 +5,7 @@ A collection of functions and classes for importing Nastran bulk data and visual
 
 ## Getting Started
 
-Either clone or download the repository and run `setupMatran.m` in the `dev_tools` folder to add the necessary package folders to the path.
+Either clone or download the repository and run `add_sandbox.m` to add the necessary package folders to the path.
 
 ### Prerequisites
 
@@ -14,14 +14,17 @@ The following MATLAB products are required to run the Matran package:
 - MATLAB 9.4
 
 ### Installing as a package
-
-- If you wish to install Matran as a package then run `packageMatran.m` in the `dev_tools` folder to package the codebase.
+**The ability to pacakge Matran as a MATLAB toolbox will be added in future releases.**
+- If you wish to install Matran as a package then run `package_matran.m` to package the codebase.
 - This will cause the latest version of the package to appear in the `releases` subfolder as a MATLAB package file. 
 - Then install the package using the standard MATLAB process. (Apps >> Install App)
 
 ## Running the tests
+Make sure you have run `add_sandbox` before attempting to run any of the tests.
 
-To run the test framework type `run('TestMatran')` in the command window.
+- To run the core set of tests type `run_micro_tests` in the MATLAB command window.
+- To run all short tests type `run_short_tests` in the MATLAB command window.
+- To run all tests in the test framework type `run('TestMatran')` in the MATLAB command window. **Not reccommended** 
 
 ### Major tests
 
