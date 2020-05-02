@@ -1,10 +1,10 @@
-function [TestResult, fList, pList] = genCodeCoverage
-%genCodeCoverage Generates a code coverage report and obtains the
-%product dependencies for the package. 
+%% genCodeCoverage 
+% Generates a code coverage report and obtains the product dependencies for
+% the package.
 %
 % Syntax:
-%	- Generate the code coverage report and return the product list...
-%       >> [] = genCodeCoverage;
+%	- Generate the code coverage report and return the product list.
+%       >> genCodeCoverage;
 %
 % Detailed Description:
 %	-  Generates a code coverage report and obtains the product
@@ -35,13 +35,10 @@ import matlab.unittest.TestRunner
 import matlab.unittest.plugins.CodeCoveragePlugin
 
 %Generate the code coverage report
-suite = TestSuite.fromFile('TestMatran.m');
-
+suite  = TestSuite.fromClass(?TestMatran);
 runner = TestRunner.withTextOutput;
 runner.addPlugin(CodeCoveragePlugin.forFolder(pwd));
 TestResult = runner.run(suite);
 
 %Get the package dependencies
 [fList, pList] = matlab.codetools.requiredFilesAndProducts('TestMatran.m');
-
-end
