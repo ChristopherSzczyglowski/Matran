@@ -1,0 +1,10 @@
+SOL 103
+DISPLACEMENT = ALL
+METHOD = 123
+BEGINBULK
+PARAM, BAILOUT, -1
+MDLPRM, HDF5, 1
+EIGRL   123     0.0             20      
+INCLUDE 'C:\Users\cs1414\Documents\GitRepos\Matran_new\models
+         \auto_generated_h5_data\ha145z_temp.bdf'
+ENDDATA

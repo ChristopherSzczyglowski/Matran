@@ -1,0 +1,634 @@
+1
+ 
+ 
+ 
+ 
+                      Warning: This computer program is protected by copyright law and international treaties.       
+                  Unauthorized use, reproduction or distribution of this computer program, or any portion of it, may 
+                                          result in severe civil and criminal penalties.                             
+                         Copyright (C) 2017 MSC Software Corporation and its licensors. All rights reserved.         
+ 
+ 
+                                              * * * * * * * * * * * * * * * * * * * *
+                                              * * * * * * * * * * * * * * * * * * * *
+                                              * *                                 * *
+                                              * *           MSC Software          * *
+                                              * *               CORP              * *
+                                              * *                                 * *
+                                              * *      M S C   N a s t r a n      * *
+                                              * *                                 * *
+                                              * *                                 * *
+                                              * *                                 * *
+                                              * *     Version 2018.1.0-CL553137   * *
+                                              * *                                 * *
+                                              * *                                 * *
+                                              * *                                 * *
+                                              * *          MAR 11, 2018           * *
+                                              * *                                 * *
+                                              * *              Intel              * *
+                                              * *   MODEL Xeon/2550 (IT062248)    * *
+                                              * * Windows 10 Enterprise 6.2 9200  * *
+                                              * * Compiled for 8664 (SINGLE Mode) * *
+                                              * *                                 * *
+                                              * * * * * * * * * * * * * * * * * * * *
+                                              * * * * * * * * * * * * * * * * * * * *
+1News file - (March 2, 2018)
+  
+               Welcome to MSC Nastran 2018.1
+  
+  
+   Details of the new capabilities can be found in the MSC Nastran 2018
+     Release Guide available online in the installation documentation
+     sub-directory.
+   Additional information can be found at the MSC Nastran Product Support page:
+  
+      http://simcompanion.mscsoftware.com
+  
+  
+   The support page provides links to these valuable information:
+      * A searchable Knowledge Base containing examples and answers to thousands
+        of frequently asked questions written by MSC Software subject-matter
+        experts.
+      * Peer-to-peer Discussion Forums enabling you to post questions for your
+        MSC Software products and receive answers from other users worldwide.
+      * A list of known issues with the product and any workarounds.
+      * Instructions on how to contact technical support
+      * A mechanism for sending us product feedback or enhancement requests.
+      * Hardware and software requirements.
+      * Examples and Tutorials
+      * and much more.
+  
+   For information on training, please visit our Training web site
+  
+      http://www.mscsoftware.com/Contents/Services/Training/
+  
+   MSC Nastran brings powerful new features and enhancements for engineering
+   solutions.
+  
+     -  The purpose of this release is to sync MSC Nastran 2018.1
+        with Patran 2018.0 release for improved compatibility
+  
+     Dynamics
+     -  Structural and Fluid Material property specification can now be
+        frequency dependent.
+     -  Anisotropic structural damping can be defined for composite
+        materials. Restriction removed that damping is proportional to
+        stiffness.
+     -  Spatial definition of property and material available now.
+  
+     Linear Buckling
+     -  Linear Buckling with local exclusion of differential stiffness in SOL
+        105.
+  
+     Rotordynamics
+     -  Enhanced Mode-Tracking for Campbell Diagrams. Two new methods
+1       introduced: Numerical Slope-Continuity and Eigenvector-Based.
+     -  Rotors can now be included in upstream Part Superelements for
+        both single and multi-level assemblies.
+     -  Support for definition of CBUSH element cross-coupling terms.
+  
+     Multiple-Mass Configuration
+     -  Easy definition and analysis of multiple mass cases in a single run.
+        Supported in SOL 101, 103, 107/110, 108/111, 109/112, 144, 145, 146,
+        200 and 400 solution sequences.
+  
+     Optimization
+     -  Shell stress constraints can now be defined for Topology Optimization.
+  
+     Assembly
+     -  New modules that can assemble multiple Bulk Data sections to form a
+        single MSC Nastran input file. Modules are analogous to part
+        superelements without reduction and are supported in SOL 101 - 112.
+  
+     Implicit Nonlinear Analysis - SOL 400
+     -  GPFORCE Output with Contact
+     -  Automatic Contact Generation
+     -  External Superelements Creation, Assembly and Data Recovery
+     -  CFAST Fastener element enabled to FUSE based on load criteria.
+  
+     Explicit Nonlinear Analysis - SOL 700
+     -  Automated Coupling Surfaces
+     -  New SOL 700 Dytran, Dytran under Nastran
+  
+     HPC
+     -  Improved performance and scalability for the New ACMS method
+     -  New MPYAD with better parallel performance and better method
+        selection.
+     -  New command line option, solve=auto and cpumax=N, to automatically
+        choose optimal solver and parallel options based on hardware and
+        the model.
+  
+     Results HDF5 Database
+     -  Additional data blocks have been added to the HDF5 file: OEFTGV,
+        OMONPNT, TOMVAR, TOPVAR, R1TABRD, HISADD, RESP12, WETFACES, META,
+        OFCRFM, EPTFSP, MPTFSP, TRNUORD, and UHT, as well as modal and
+        Rotordynamic matrices.
+  
+     Documentation
+  
+     The complete documentation set is provided in a separate installer and
+     when installed is available at:
+     MSC_DOC_DIR/doc/pdf_nastran directory.
+     Where MSC_DOC_DIR is the directory where documentation was installed
+     This help set has cross references between documents, links to how-to
+     videos, and example files.
+1 
+     Individual MSC Nastran documents are available for download from the
+       Simcompanion Website at:
+       http://simcompanion.mscsoftware.com/
+  
+     These documents were updated for the MSC Nastran 2018.0 Release
+  
+         1.  MSC Nastran 2018.0 Installation and Operations Guide
+         2.  MSC Nastran 2018.0 Quick Reference Guide
+         3.  MSC Nastran 2018.0 Release Guide
+         4.  MSC Nastran 2018.0 Linear Statics Analysis User's Guide
+         5.  MSC Nastran 2018.0 Dynamic Analysis User's Guide
+         6.  MSC Nastran 2018.0 Superelements User's Guide
+         7.  MSC Nastran 2018.0 Rotordynamics User's Guide
+         8.  MSC Nastran 2018.0 Demonstration Problems Manual
+         9.  MSC Nastran 2018.0 Nastran Embedded Fatigue User's Guide
+        10.  MSC Nastran 2018.0 Design Sensitivity and Optimization
+        11.  MSC Nastran 2018.0 Nonlinear User's Guide SOL 400
+        12.  MSC Nastran 2018.0 DMAP Programmer's Guide
+        13.  MSC Nastran 2018.0 High Performance Computing User's Guide
+  
+  
+  
+    Please refer to:
+  
+    MSC_DOC_DIR/doc/pdf_nastran/nastran_library.pdf
+  
+1                                                                             APRIL  19, 2020  MSC Nastran  3/11/18   PAGE     1
+                                                                                                                                    
+0        N A S T R A N    F I L E    A N D    S Y S T E M    P A R A M E T E R    E C H O                                           
+0                                                                                                                                   
+                                                                                                                                    
+                                                                                                                                    
+     $ SYSFIELD=SCR*(RAW=YES,BUFFIO=YES,WNUM=16,WSIZE=16MB) $(C:/PROGRAM FILES/MSC.SO
+     $ SYSFIELD=DBALL(RAW=YES,BUFFIO=YES,WNUM=16,WSIZE=16MB) $(C:/PROGRAM FILES/MSC.S
+     NASTRAN BUFFSIZE=8193 $(C:/PROGRAM FILES/MSC.SOFTWARE/MSC_NASTRAN/20181/CONF/NAS
+1                                                                             APRIL  19, 2020  MSC Nastran  3/11/18   PAGE     2
+                                                                                                                                    
+0        N A S T R A N    E X E C U T I V E    C O N T R O L    E C H O                                                             
+0                                                                                                                                   
+                                                                                                                                    
+                                                                                                                                    
+     SOL 103                                                                                 
+     CEND       $ GENERATED BY GETLIN                                                        
+1                                                                             APRIL  19, 2020  MSC Nastran  3/11/18   PAGE     3
+                                                                                                                                    
+0                                                                                                                                   
+0                                        C A S E    C O N T R O L    E C H O                                                        
+                 COMMAND                                                                                                            
+                 COUNT                                                                                                              
+                  1      DISPLACEMENT = ALL                                                                      
+                  2      METHOD = 123                                                                            
+                  3      BEGINBULK                                                                               
+1                                                                             APRIL  19, 2020  MSC Nastran  3/11/18   PAGE     4
+                                                                                                                                    
+0                                                                                                                                   
+                                              I N P U T   B U L K   D A T A   E C H O                                               
+                 ENTRY                                                                                                              
+                 COUNT        .   1  ..   2  ..   3  ..   4  ..   5  ..   6  ..   7  ..   8  ..   9  ..  10  .                      
+                              $INCLUDE "C:\Users\cs1414\Documents\GitRepos\Matran_new\models\auto_generated_h5_data\ha75b_temp.bdf"
+                              $END OF INCLUDE "C:\Users\cs1414\Documents\GitRepos\Matran_new\models\auto_generated_h5_data\ha75b_temp.bdf"
+1                                                                             APRIL  19, 2020  MSC Nastran  3/11/18   PAGE     5
+                                                                                                                                    
+0                                                                                                                                   
+                                                  S O R T E D   B U L K   D A T A   E C H O                                         
+                 ENTRY                                                                                                              
+                 COUNT        .   1  ..   2  ..   3  ..   4  ..   5  ..   6  ..   7  ..   8  ..   9  ..  10  .                      
+                    1-        AEFACT  77      0.      .09     .276    .454    .636    .826    1.
+                    2-        AERO    1               131.232 1.1468-71
+                    3-        CAERO1  1001    1000    0               4       77              1       +
+                    4-        +       78.75   0.      0.      225.    35.     500.    0.      100.
+                    5-        CMASS2  121     5248.7  1       3
+                    6-        CMASS2  122     134.9   1       3       2       3
+                    7-        CMASS2  123     790.3   2       3
+                    8-        CMASS2  341     9727.   3       3
+                    9-        CMASS2  342     11005.  3       3       4       3
+                   10-        CMASS2  343     473.    4       3
+                   11-        CMASS2  561     3253.6  5       3
+                   12-        CMASS2  562     -139.7  5       3       6       3
+                   13-        CMASS2  563     946.3   6       3
+                   14-        CMASS2  781     2617.8  7       3
+                   15-        CMASS2  782     21.     7       3       8       3
+                   16-        CMASS2  783     782.3   8       3
+                   17-        CMASS2  9101    494.8   9       3
+                   18-        CMASS2  9102    -7.3    9       3       10      3
+                   19-        CMASS2  9103    185.2   10      3
+                   20-        CONM1   1       11                                                      +
+                   21-        +       17400.                          4.37E+07                        +
+                   22-        +               4.35E+09
+                   23-        CORD2R  1               0.      0.      0.      0.      0.      -1.     +
+                   24-        +       -1.     0.      0.
+                   25-        EIGR    10      MGIV                            10                      +
+                   26-        +       MAX
+                   27-        EIGRL   123     0.              20
+                   28-        FLFACT  1       1.
+                   29-        FLFACT  2       0.
+                   30-        FLFACT  4       4800.   6000.   7200.   8400.   9600.   10800.  -12000. +
+                   31-        +       -13200. 14400.  15600.  16800.  18000.  -19200. -20400. 21600.  +
+                   32-        +       22800.  24000.  25200.
+                   33-        FLUTTER 40      PK      1       2       4       L       5
+                   34-        GENEL   432             1       3       2       3       3       3       +
+                   35-        +       4       3       5       3       6       3       7       3       +
+                   36-        +       8       3       9       3       10      3                       +
+                   37-        +       UD              11      3       11      5                       +
+                   38-        +       Z       8.7172-61.3361-61.2778-56.2720-61.6251-51.0492-52.0478-5+
+                   39-        +       1.5630-52.4285-52.0403-53.0861-56.2720-63.2297-51.0492-53.3529-5+
+                   40-        +       1.5630-53.5021-52.0257-53.5785-52.7732-51.5726-54.8255-53.7628-5+
+                   41-        +       7.3284-56.4338-59.5810-58.8378-56.3749-53.7628-58.0136-56.4338-5+
+                   42-        +       1.0012-48.8378-51.1811-41.2758-41.1344-4.0001935.00018162.5283-4+
+                   43-        +       2.4294-41.6999-4.0001816.00022922.4294-42.8249-43.6862-43.5052-4+
+                   44-        +       5.2675-45.1171-44.2292-45.1171-45.7187-4.0008484.0008234.0009234+
+                   45-        +       S       1.      -20.25  1.      81.     1.      -17.85  1.      +
+1                                                                             APRIL  19, 2020  MSC Nastran  3/11/18   PAGE     6
+                                                                                                                                    
+0                                                                                                                                   
+                                                  S O R T E D   B U L K   D A T A   E C H O                                         
+                 ENTRY                                                                                                              
+                 COUNT        .   1  ..   2  ..   3  ..   4  ..   5  ..   6  ..   7  ..   8  ..   9  ..  10  .                      
+                   46-        +       71.4    1.      -15.8   1.      63.2    1.      -13.3   1.      +
+                   47-        +       53.2    1.      -11.05  1.      44.2
+                   48-        GRID    1               20.25   90.                     12456
+                   49-        GRID    2               -81.    90.                     12456
+                   50-        GRID    3               17.85   186.                    12456
+                   51-        GRID    4               -71.4   186.                    12456
+                   52-        GRID    5               15.8    268.                    12456
+                   53-        GRID    6               -63.2   268.                    12456
+                   54-        GRID    7               13.3    368.                    12456
+                   55-        GRID    8               -53.2   368.                    12456
+                   56-        GRID    9               11.05   458.                    12456
+                   57-        GRID    10              -44.2   458.                    12456
+                   58-        GRID    11              0.      0.                      1246
+                   59-        MDLPRM  HDF5    1
+                   60-        MKAERO1 0.                                                              +
+                   61-        +       .001    .05     .1      .2      .5      1.
+                   62-        PAERO1  1000
+                   63-        PARAM   GRDPNT  11
+                   64-        PARAM   KDAMP   -1
+                   65-        PARAM   LMODES  10
+                   66-        PARAM   VREF    12.0
+                   67-        PARAM   WTMASS  .0025907
+                   68-        SET1    14      1       2       3       4       5       6       7       +
+                   69-        +       8       9       10      11
+                   70-        SPC1    1       35      11
+                   71-        SPLINE2 100     1001    1005    1024    14      0.      1.      0       +
+                   72-        +       -1.     -1.
+                   73-        TABDMP1 2000                                                            +
+                   74-        +       0.      0.      10.     0.      ENDT
+                              ENDDATA
+                        TOTAL COUNT= 75
+                              INPUT BULK DATA ENTRY COUNT = 80
+1                                                                             APRIL  19, 2020  MSC Nastran  3/11/18   PAGE     7
+                                                                                                                                    
+0                                                                                                                                   
+                                        M O D E L   S U M M A R Y          BULK = 0
+                                   ENTRY NAME        NUMBER OF ENTRIES
+                                   ----------        -----------------
+                                       AEFACT                        1
+                                         AERO                        1
+                                       CAERO1                        1
+                                       CMASS2                       15
+                                        CONM1                        1
+                                       CORD2R                        1
+                                         EIGR                        1
+                                        EIGRL                        1
+                                       FLFACT                        3
+                                      FLUTTER                        1
+                                        GENEL                        1
+                                         GRID                       11
+                                       MDLPRM                        1
+                                      MKAERO1                        1
+                                       PAERO1                        1
+                                        PARAM                        5
+                                         SET1                        1
+                                         SPC1                        1
+                                      SPLINE2                        1
+                                      TABDMP1                        1
+
+ ^^^     
+ ^^^ >>> IFP OPERATIONS COMPLETE <<< 
+ ^^^     
+ *** USER INFORMATION MESSAGE 3 (crdb::nastran::Processor::writeInput)
+ *** USER INFORMATION MESSAGE  (WRITE DATA BLOCK PVT, TRAILER[101, 20, 0, 0, 0, 0, 0])
+ *** USER INFORMATION MESSAGE 3 (crdb::nastran::Processor::writeInput)
+ *** USER INFORMATION MESSAGE  (WRITE DATA BLOCK CASECC, TRAILER[102, 1, 0, 1000, 0, 0, 0])
+ *** USER INFORMATION MESSAGE 3 (crdb::nastran::Processor::writeInput)
+ *** USER INFORMATION MESSAGE  (WRITE DATA BLOCK CSTM, TRAILER[104, 11, 1, 1, 1, 12, 0])
+ *** USER INFORMATION MESSAGE 3 (crdb::nastran::Processor::writeInput)
+ *** USER INFORMATION MESSAGE  (WRITE DATA BLOCK GEOM1Q, TRAILER[101, 0, 2048, 8, 0, 0, 0])
+ *** USER INFORMATION MESSAGE 3 (crdb::nastran::Processor::writeInput)
+ *** USER INFORMATION MESSAGE  (WRITE DATA BLOCK GEOM2, TRAILER[103, 36, 0, 32, 0, 0, 0])
+ *** USER INFORMATION MESSAGE 3 (crdb::nastran::Processor::writeInput)
+ *** USER INFORMATION MESSAGE  (WRITE DATA BLOCK GEOM4S, TRAILER[105, 0, 0, 0, 64, 0, 0])
+ *** USER INFORMATION MESSAGE 3 (crdb::nastran::Processor::writeInput)
+ *** USER INFORMATION MESSAGE  (DATA BLOCK GEOM4S IS NOT SUPPORTED)
+ *** USER INFORMATION MESSAGE 3 (crdb::nastran::Processor::writeInput)
+ *** USER INFORMATION MESSAGE  (WRITE DATA BLOCK GEOM1, TRAILER[101, 0, 2048, 8, 0, 0, 0])
+ *** USER INFORMATION MESSAGE 3 (crdb::nastran::Processor::writeInput)
+ *** USER INFORMATION MESSAGE  (WRITE DATA BLOCK DYNAMIC, TRAILER[102, 8448, 0, 0, 0, 0, 0])
+ *** USER INFORMATION MESSAGE 3 (crdb::nastran::Processor::writeInput)
+ *** USER INFORMATION MESSAGE  (WRITE DATA BLOCK EDT, TRAILER[103, 0, 7, 26496, 0, 0, 4])
+ *** USER INFORMATION MESSAGE 3 (crdb::nastran::Processor::writeInput)
+ *** USER INFORMATION MESSAGE  (WRITE DATA BLOCK DIT, TRAILER[104, 0, 2048, 0, 0, 0, 0])
+ *** USER INFORMATION MESSAGE 3 (crdb::nastran::Processor::writeInput)
+ *** USER INFORMATION MESSAGE  (WRITE DATA BLOCK GEOM4, TRAILER[102, 0, 0, 0, 64, 0, 0])
+1                                                                             APRIL  19, 2020  MSC Nastran  3/11/18   PAGE     8
+                                                                                                                                    
+0                                                                                                                                   
+                           O U T P U T   F R O M   G R I D   P O I N T   W E I G H T   G E N E R A T O R
+0                                                     REFERENCE POINT =       11
+                                                                M O
+                      *  0.000000E+00  0.000000E+00  0.000000E+00  0.000000E+00  0.000000E+00  0.000000E+00 *
+                      *  0.000000E+00  0.000000E+00  0.000000E+00  0.000000E+00  0.000000E+00  0.000000E+00 *
+                      *  0.000000E+00  0.000000E+00  4.191900E+04  5.128960E+06 -1.642074E+05  0.000000E+00 *
+                      *  0.000000E+00  0.000000E+00  5.128960E+06  1.350243E+09 -2.381847E+07  0.000000E+00 *
+                      *  0.000000E+00  0.000000E+00 -1.642074E+05 -2.381847E+07  4.458782E+09  0.000000E+00 *
+                      *  0.000000E+00  0.000000E+00  0.000000E+00  0.000000E+00  0.000000E+00  0.000000E+00 *
+                                                                 S
+                                           *  1.000000E+00  0.000000E+00  0.000000E+00 *
+                                           *  0.000000E+00  1.000000E+00  0.000000E+00 *
+                                           *  0.000000E+00  0.000000E+00  1.000000E+00 *
+                               DIRECTION
+                          MASS AXIS SYSTEM (S)     MASS              X-C.G.        Y-C.G.        Z-C.G.
+                                  X            0.000000E+00      0.000000E+00  0.000000E+00  0.000000E+00
+                                  Y            0.000000E+00      0.000000E+00  0.000000E+00  0.000000E+00
+                                  Z            4.191900E+04      3.917255E+00  1.223541E+02  0.000000E+00
+                                                                I(S)
+                                           *  7.226943E+08  3.727022E+06  0.000000E+00 *
+                                           *  3.727022E+06  4.458139E+09  0.000000E+00 *
+                                           *  0.000000E+00  0.000000E+00  0.000000E+00 *
+                                                                I(Q)
+                                           *  4.458143E+09                             *
+                                           *                7.226906E+08               *
+                                           *                              0.000000E+00 *
+                                                                 Q
+                                           *  9.977437E-04  9.999995E-01  0.000000E+00 *
+                                           * -9.999995E-01  9.977437E-04  0.000000E+00 *
+                                           *  0.000000E+00  0.000000E+00  1.000000E+00 *
+
+1                                                                             APRIL  19, 2020  MSC Nastran  3/11/18   PAGE     9
+                                                                                                                                    
+0                                                                                                                                   
+ *** USER INFORMATION MESSAGE 3 (crdb::nastran::Processor::writeOutput)
+ *** USER INFORMATION MESSAGE  (WRITE DATA BLOCK OGPWG, TRAILER[101, 0, 0, 0, 0, 0, 1])
+1                                                                             APRIL  19, 2020  MSC Nastran  3/11/18   PAGE    10
+                                                                                                                                    
+0                                                                                                                                   
+0 RESULTANTS ABOUT       11 IN SUPERELEMENT BASIC SYSTEM COORDINATES.
+
+0                                                  OLOAD    RESULTANT       
+  SUBCASE/    LOAD
+  DAREA ID    TYPE       T1            T2            T3            R1            R2            R3
+0        1     FX    0.000000E+00     ----          ----          ----       0.000000E+00  0.000000E+00                             
+               FY       ----       0.000000E+00     ----       0.000000E+00     ----       0.000000E+00                             
+               FZ       ----          ----       0.000000E+00  0.000000E+00  0.000000E+00     ----                                  
+               MX       ----          ----          ----       0.000000E+00     ----          ----                                  
+               MY       ----          ----          ----          ----       0.000000E+00     ----                                  
+               MZ       ----          ----          ----          ----          ----       0.000000E+00                             
+             TOTALS  0.000000E+00  0.000000E+00  0.000000E+00  0.000000E+00  0.000000E+00  0.000000E+00
+ *** USER INFORMATION MESSAGE 5458 (REIG)
+     QL HOUSEHOLDER METHOD IS AUTOMATICALLY SELECTED .
+1                                                                             APRIL  19, 2020  MSC Nastran  3/11/18   PAGE    11
+                                                                                                                                    
+0                                                                                                                                   
+ 
+                                              R E A L   E I G E N V A L U E S
+   MODE    EXTRACTION      EIGENVALUE            RADIANS             CYCLES            GENERALIZED         GENERALIZED
+    NO.       ORDER                                                                       MASS              STIFFNESS
+        1         1        1.776357E-14        1.332800E-07        2.121218E-08        1.000000E+00        1.776357E-14
+        2         2        7.203127E-13        8.487124E-07        1.350768E-07        1.000000E+00        7.203127E-13
+        3         3        2.344194E+02        1.531076E+01        2.436783E+00        1.000000E+00        2.344194E+02
+        4         4        5.143252E+02        2.267874E+01        3.609434E+00        1.000000E+00        5.143252E+02
+        5         5        2.873477E+03        5.360482E+01        8.531472E+00        1.000000E+00        2.873477E+03
+        6         6        6.346821E+03        7.966694E+01        1.267939E+01        1.000000E+00        6.346821E+03
+        7         7        8.746166E+03        9.352094E+01        1.488432E+01        1.000000E+00        8.746166E+03
+        8         8        1.766041E+04        1.328925E+02        2.115050E+01        1.000000E+00        1.766041E+04
+        9         9        2.402355E+04        1.549953E+02        2.466827E+01        1.000000E+00        2.402355E+04
+       10        10        4.211879E+04        2.052286E+02        3.266315E+01        1.000000E+00        4.211879E+04
+       11        11        6.020951E+04        2.453763E+02        3.905285E+01        1.000000E+00        6.020951E+04
+       12        12        9.492844E+04        3.081046E+02        4.903637E+01        1.000000E+00        9.492844E+04
+ *** USER INFORMATION MESSAGE 3 (crdb::nastran::Processor::writeOutput)
+ *** USER INFORMATION MESSAGE  (WRITE DATA BLOCK OLAMA, TRAILER[101, 12, 0, 0, 0, 0, 0])
+1                                                                             APRIL  19, 2020  MSC Nastran  3/11/18   PAGE    12
+                                                                                                                                    
+0                                                                                                                                   
+      EIGENVALUE =  1.776357E-14
+          CYCLES =  2.121218E-08         R E A L   E I G E N V E C T O R   N O .          1
+ 
+      POINT ID.   TYPE          T1             T2             T3             R1             R2             R3
+             1      G      0.0            0.0            9.880054E-03   0.0            0.0            0.0
+             2      G      0.0            0.0            3.932446E-02   0.0            0.0            0.0
+             3      G      0.0            0.0            1.057800E-02   0.0            0.0            0.0
+             4      G      0.0            0.0            3.653269E-02   0.0            0.0            0.0
+             5      G      0.0            0.0            1.117415E-02   0.0            0.0            0.0
+             6      G      0.0            0.0            3.414806E-02   0.0            0.0            0.0
+             7      G      0.0            0.0            1.190118E-02   0.0            0.0            0.0
+             8      G      0.0            0.0            3.123997E-02   0.0            0.0            0.0
+             9      G      0.0            0.0            1.255550E-02   0.0            0.0            0.0
+            10      G      0.0            0.0            2.862269E-02   0.0            0.0            0.0
+            11      G      0.0            0.0            1.576894E-02   0.0            2.908090E-04   0.0
+1                                                                             APRIL  19, 2020  MSC Nastran  3/11/18   PAGE    13
+                                                                                                                                    
+0                                                                                                                                   
+      EIGENVALUE =  7.203127E-13
+          CYCLES =  1.350768E-07         R E A L   E I G E N V E C T O R   N O .          2
+ 
+      POINT ID.   TYPE          T1             T2             T3             R1             R2             R3
+             1      G      0.0            0.0           -9.556999E-02   0.0            0.0            0.0
+             2      G      0.0            0.0           -9.102784E-02   0.0            0.0            0.0
+             3      G      0.0            0.0           -9.546232E-02   0.0            0.0            0.0
+             4      G      0.0            0.0           -9.145850E-02   0.0            0.0            0.0
+             5      G      0.0            0.0           -9.537036E-02   0.0            0.0            0.0
+             6      G      0.0            0.0           -9.182636E-02   0.0            0.0            0.0
+             7      G      0.0            0.0           -9.525820E-02   0.0            0.0            0.0
+             8      G      0.0            0.0           -9.227497E-02   0.0            0.0            0.0
+             9      G      0.0            0.0           -9.515727E-02   0.0            0.0            0.0
+            10      G      0.0            0.0           -9.267871E-02   0.0            0.0            0.0
+            11      G      0.0            0.0           -9.466156E-02   0.0            4.486069E-05   0.0
+1                                                                             APRIL  19, 2020  MSC Nastran  3/11/18   PAGE    14
+                                                                                                                                    
+0                                                                                                                                   
+      EIGENVALUE =  2.344194E+02
+          CYCLES =  2.436783E+00         R E A L   E I G E N V E C T O R   N O .          3
+ 
+      POINT ID.   TYPE          T1             T2             T3             R1             R2             R3
+             1      G      0.0            0.0            4.729441E-02   0.0            0.0            0.0
+             2      G      0.0            0.0            4.527467E-02   0.0            0.0            0.0
+             3      G      0.0            0.0            6.193619E-03   0.0            0.0            0.0
+             4      G      0.0            0.0            2.638559E-03   0.0            0.0            0.0
+             5      G      0.0            0.0           -9.122064E-02   0.0            0.0            0.0
+             6      G      0.0            0.0           -9.504229E-02   0.0            0.0            0.0
+             7      G      0.0            0.0           -2.287448E-01   0.0            0.0            0.0
+             8      G      0.0            0.0           -2.329822E-01   0.0            0.0            0.0
+             9      G      0.0            0.0           -3.648542E-01   0.0            0.0            0.0
+            10      G      0.0            0.0           -3.690692E-01   0.0            0.0            0.0
+            11      G      0.0            0.0            6.156192E-02   0.0            2.379172E-06   0.0
+1                                                                             APRIL  19, 2020  MSC Nastran  3/11/18   PAGE    15
+                                                                                                                                    
+0                                                                                                                                   
+      EIGENVALUE =  5.143252E+02
+          CYCLES =  3.609434E+00         R E A L   E I G E N V E C T O R   N O .          4
+ 
+      POINT ID.   TYPE          T1             T2             T3             R1             R2             R3
+             1      G      0.0            0.0            1.053143E-02   0.0            0.0            0.0
+             2      G      0.0            0.0           -8.163480E-02   0.0            0.0            0.0
+             3      G      0.0            0.0            2.930983E-02   0.0            0.0            0.0
+             4      G      0.0            0.0           -1.417020E-01   0.0            0.0            0.0
+             5      G      0.0            0.0            3.005356E-02   0.0            0.0            0.0
+             6      G      0.0            0.0           -1.268671E-01   0.0            0.0            0.0
+             7      G      0.0            0.0            3.134870E-02   0.0            0.0            0.0
+             8      G      0.0            0.0           -1.060124E-01   0.0            0.0            0.0
+             9      G      0.0            0.0            3.164427E-02   0.0            0.0            0.0
+            10      G      0.0            0.0           -8.363807E-02   0.0            0.0            0.0
+            11      G      0.0            0.0           -1.068155E-02   0.0            4.582824E-05   0.0
+1                                                                             APRIL  19, 2020  MSC Nastran  3/11/18   PAGE    16
+                                                                                                                                    
+0                                                                                                                                   
+      EIGENVALUE =  2.873477E+03
+          CYCLES =  8.531472E+00         R E A L   E I G E N V E C T O R   N O .          5
+ 
+      POINT ID.   TYPE          T1             T2             T3             R1             R2             R3
+             1      G      0.0            0.0            1.553966E-02   0.0            0.0            0.0
+             2      G      0.0            0.0            2.145181E-02   0.0            0.0            0.0
+             3      G      0.0            0.0            6.749302E-02   0.0            0.0            0.0
+             4      G      0.0            0.0            7.820306E-02   0.0            0.0            0.0
+             5      G      0.0            0.0            1.824029E-01   0.0            0.0            0.0
+             6      G      0.0            0.0            1.936621E-01   0.0            0.0            0.0
+             7      G      0.0            0.0           -4.407481E-02   0.0            0.0            0.0
+             8      G      0.0            0.0           -4.038882E-02   0.0            0.0            0.0
+             9      G      0.0            0.0           -4.004811E-01   0.0            0.0            0.0
+            10      G      0.0            0.0           -4.070112E-01   0.0            0.0            0.0
+            11      G      0.0            0.0           -6.599010E-02   0.0           -4.700353E-07   0.0
+1                                                                             APRIL  19, 2020  MSC Nastran  3/11/18   PAGE    17
+                                                                                                                                    
+0                                                                                                                                   
+      EIGENVALUE =  6.346821E+03
+          CYCLES =  1.267939E+01         R E A L   E I G E N V E C T O R   N O .          6
+ 
+      POINT ID.   TYPE          T1             T2             T3             R1             R2             R3
+             1      G      0.0            0.0            8.206380E-02   0.0            0.0            0.0
+             2      G      0.0            0.0            7.850676E-02   0.0            0.0            0.0
+             3      G      0.0            0.0            1.181573E-01   0.0            0.0            0.0
+             4      G      0.0            0.0            1.343013E-01   0.0            0.0            0.0
+             5      G      0.0            0.0           -1.508838E-01   0.0            0.0            0.0
+             6      G      0.0            0.0           -1.199838E-01   0.0            0.0            0.0
+             7      G      0.0            0.0           -5.977187E-02   0.0            0.0            0.0
+             8      G      0.0            0.0           -2.493932E-03   0.0            0.0            0.0
+             9      G      0.0            0.0            2.001924E-01   0.0            0.0            0.0
+            10      G      0.0            0.0            2.682541E-01   0.0            0.0            0.0
+            11      G      0.0            0.0           -6.272820E-02   0.0            1.143685E-07   0.0
+1                                                                             APRIL  19, 2020  MSC Nastran  3/11/18   PAGE    18
+                                                                                                                                    
+0                                                                                                                                   
+      EIGENVALUE =  8.746166E+03
+          CYCLES =  1.488432E+01         R E A L   E I G E N V E C T O R   N O .          7
+ 
+      POINT ID.   TYPE          T1             T2             T3             R1             R2             R3
+             1      G      0.0            0.0            9.570709E-04   0.0            0.0            0.0
+             2      G      0.0            0.0            3.961143E-02   0.0            0.0            0.0
+             3      G      0.0            0.0            5.249379E-03   0.0            0.0            0.0
+             4      G      0.0            0.0            5.059567E-02   0.0            0.0            0.0
+             5      G      0.0            0.0            4.470582E-02   0.0            0.0            0.0
+             6      G      0.0            0.0           -2.120893E-01   0.0            0.0            0.0
+             7      G      0.0            0.0            1.514345E-01   0.0            0.0            0.0
+             8      G      0.0            0.0           -5.001511E-01   0.0            0.0            0.0
+             9      G      0.0            0.0            1.902946E-01   0.0            0.0            0.0
+            10      G      0.0            0.0           -4.701491E-01   0.0            0.0            0.0
+            11      G      0.0            0.0           -3.926370E-03   0.0           -1.041225E-06   0.0
+1                                                                             APRIL  19, 2020  MSC Nastran  3/11/18   PAGE    19
+                                                                                                                                    
+0                                                                                                                                   
+      EIGENVALUE =  1.766041E+04
+          CYCLES =  2.115050E+01         R E A L   E I G E N V E C T O R   N O .          8
+ 
+      POINT ID.   TYPE          T1             T2             T3             R1             R2             R3
+             1      G      0.0            0.0           -1.997984E-03   0.0            0.0            0.0
+             2      G      0.0            0.0           -1.214654E-02   0.0            0.0            0.0
+             3      G      0.0            0.0           -1.411535E-02   0.0            0.0            0.0
+             4      G      0.0            0.0           -1.577045E-02   0.0            0.0            0.0
+             5      G      0.0            0.0            1.369435E-01   0.0            0.0            0.0
+             6      G      0.0            0.0            1.352261E-01   0.0            0.0            0.0
+             7      G      0.0            0.0           -2.089723E-01   0.0            0.0            0.0
+             8      G      0.0            0.0           -2.403128E-01   0.0            0.0            0.0
+             9      G      0.0            0.0            4.456524E-01   0.0            0.0            0.0
+            10      G      0.0            0.0            5.073516E-01   0.0            0.0            0.0
+            11      G      0.0            0.0            6.836658E-04   0.0            9.715712E-08   0.0
+1                                                                             APRIL  19, 2020  MSC Nastran  3/11/18   PAGE    20
+                                                                                                                                    
+0                                                                                                                                   
+      EIGENVALUE =  2.402355E+04
+          CYCLES =  2.466827E+01         R E A L   E I G E N V E C T O R   N O .          9
+ 
+      POINT ID.   TYPE          T1             T2             T3             R1             R2             R3
+             1      G      0.0            0.0            1.323396E-01   0.0            0.0            0.0
+             2      G      0.0            0.0           -5.290600E-01   0.0            0.0            0.0
+             3      G      0.0            0.0           -2.393813E-02   0.0            0.0            0.0
+             4      G      0.0            0.0            3.790567E-04   0.0            0.0            0.0
+             5      G      0.0            0.0            1.207788E-03   0.0            0.0            0.0
+             6      G      0.0            0.0            1.759211E-02   0.0            0.0            0.0
+             7      G      0.0            0.0            1.574288E-02   0.0            0.0            0.0
+             8      G      0.0            0.0           -1.140878E-02   0.0            0.0            0.0
+             9      G      0.0            0.0           -1.225723E-02   0.0            0.0            0.0
+            10      G      0.0            0.0           -1.085436E-02   0.0            0.0            0.0
+            11      G      0.0            0.0           -5.092905E-03   0.0            6.709835E-06   0.0
+1                                                                             APRIL  19, 2020  MSC Nastran  3/11/18   PAGE    21
+                                                                                                                                    
+0                                                                                                                                   
+      EIGENVALUE =  4.211879E+04
+          CYCLES =  3.266315E+01         R E A L   E I G E N V E C T O R   N O .         10
+ 
+      POINT ID.   TYPE          T1             T2             T3             R1             R2             R3
+             1      G      0.0            0.0           -2.175779E-03   0.0            0.0            0.0
+             2      G      0.0            0.0            1.102250E-03   0.0            0.0            0.0
+             3      G      0.0            0.0            2.213506E-03   0.0            0.0            0.0
+             4      G      0.0            0.0           -1.962281E-02   0.0            0.0            0.0
+             5      G      0.0            0.0           -1.587342E-01   0.0            0.0            0.0
+             6      G      0.0            0.0            5.419111E-01   0.0            0.0            0.0
+             7      G      0.0            0.0            2.669704E-02   0.0            0.0            0.0
+             8      G      0.0            0.0           -1.003520E-01   0.0            0.0            0.0
+             9      G      0.0            0.0            2.234258E-01   0.0            0.0            0.0
+            10      G      0.0            0.0           -5.641239E-01   0.0            0.0            0.0
+            11      G      0.0            0.0            2.580038E-04   0.0            2.668136E-08   0.0
+ *** USER INFORMATION MESSAGE 3 (crdb::nastran::Processor::writeOutput)
+ *** USER INFORMATION MESSAGE  (WRITE DATA BLOCK OUG1, TRAILER[101, 0, 880, 0, 0, 0, 1])
+1                                                                             APRIL  19, 2020  MSC Nastran  3/11/18   PAGE    22
+                                                                                                                                    
+0                                                                                                                                   
+ * * * *  D B D I C T   P R I N T  * * * *      SUBDMAP = PRTSUM  ,  DMAP STATEMENT NO.     71
+
+
+
+0                                   * * * *  A N A L Y S I S  S U M M A R Y  T A B L E  * * * *
+0 SEID  PEID PROJ VERS APRCH      SEMG SEMR SEKR SELG SELR MODES DYNRED SOLLIN PVALID SOLNL LOOPID DESIGN CYCLE SENSITIVITY
+ --------------------------------------------------------------------------------------------------------------------------
+     0     0    1    1 '        '    T    T    T    T    T     T      F      T      0     F     -1            0           F
+0SEID = SUPERELEMENT ID.
+ PEID = PRIMARY SUPERELEMENT ID OF IMAGE SUPERELEMENT.
+ PROJ = PROJECT ID NUMBER.
+ VERS = VERSION ID.
+ APRCH = BLANK FOR STRUCTURAL ANALYSIS.  HEAT FOR HEAT TRANSFER ANALYSIS.
+ SEMG = STIFFNESS AND MASS MATRIX GENERATION STEP.
+ SEMR = MASS MATRIX REDUCTION STEP (INCLUDES EIGENVALUE SOLUTION FOR MODES).
+ SEKR = STIFFNESS MATRIX REDUCTION STEP.
+ SELG = LOAD MATRIX GENERATION STEP.
+ SELR = LOAD MATRIX REDUCTION STEP. 
+ MODES = T (TRUE) IF NORMAL MODES OR BUCKLING MODES CALCULATED.
+ DYNRED = T (TRUE) MEANS GENERALIZED DYNAMIC AND/OR COMPONENT MODE REDUCTION PERFORMED.
+ SOLLIN = T (TRUE) IF LINEAR SOLUTION EXISTS IN DATABASE.
+ PVALID = P-DISTRIBUTION ID OF P-VALUE FOR P-ELEMENTS
+ LOOPID = THE LAST LOOPID VALUE USED IN THE NONLINEAR ANALYSIS.  USEFUL FOR RESTARTS.
+ SOLNL = T (TRUE) IF NONLINEAR SOLUTION EXISTS IN DATABASE.
+ DESIGN CYCLE = THE LAST DESIGN CYCLE (ONLY VALID IN OPTIMIZATION).
+ SENSITIVITY = SENSITIVITY MATRIX GENERATION FLAG.
+ 
+ No PARAM values were set in the Control File.
+ 
+1                                        * * * END OF JOB * * *
+ 
+ 
+ No Symbolic Replacement variables or values were specified.
+
