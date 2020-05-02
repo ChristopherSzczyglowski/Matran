@@ -1,4 +1,4 @@
-%add_sandbox Sets up the development environment for the MATRAN sandbox.
+%add_sandbox Sets up the development environment for the Matran sandbox.
 %
 % Author    : Christopher Szczyglowski
 % Email     : chris.szczyglowski@gmail.com

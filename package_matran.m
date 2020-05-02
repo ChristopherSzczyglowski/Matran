@@ -1,9 +1,9 @@
-function packageMatran
-%packageMatran Generates a MATLAB package of the Matran toolbox.
+function package_matran
+%package_matran Generates a MATLAB package of the Matran toolbox.
 %
 % Syntax:
 %	- Generate the package
-%       >> packageMatran
+%       >> package_matran
 %
 % Detailed Description:
 %	- Detailed explanation of the function and how it works...
