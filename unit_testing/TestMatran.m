@@ -122,7 +122,8 @@ classdef TestMatran < matlab.unittest.TestCase
                 checkBulkCoverage(obj);
             end
             
-            sldiagviewer.diary
+            %TODO - Update logging of diagnostics during test
+            %sldiagviewer.diary
             
         end
     end
