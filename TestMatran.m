@@ -84,6 +84,13 @@ classdef TestMatran < matlab.unittest.TestCase
     end
     
     methods % set / get
+        function set.TestFigure(obj, val)
+            if isempty(obj.TestFigure)
+                obj.TestFigure = val;
+            else
+                obj.TestFigure = [obj.TestFigure, val];
+            end
+        end
         function val = get.PathToNastranTPL(~)
             if ispref('matran', 'PathToNastranTPL')
                 val = getpref('matran', 'PathToNastranTPL');
