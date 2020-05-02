@@ -63,11 +63,10 @@ classdef TestMatran < matlab.unittest.TestCase
             'uob_HARW_wide_field\sol_103_pod_fwd_pc.dat'};  %HARW wing (wide-field)       
         %Auto-generated .h5 files from the 'models' folder
         AutoH5Files = getH5files;
-    end
-    
+    end    
     properties (TestParameter) % import parameters
         %Function handle to logging function
-        LogFcn  = {@logger}; %, 'diary.txt'};
+        %LogFcn  = {@logger}; %, 'diary.txt'};
         %Toggle printing output 
         Verbose = {true, false};
     end
@@ -111,6 +110,10 @@ classdef TestMatran < matlab.unittest.TestCase
     methods % construction
         function obj = TestMatran(varargin)
                         
+            %Make sure 'models' folder is accessible
+            %TODO - Add this as a test fixture
+            addpath(genpath(fullfile(fileparts(mfilename('fullpath')), 'models')));
+            
             p = inputParser;
             addParameter(p, 'CheckBulkCoverage', false, @(x)validateattributes(x, {'logical'}, {'scalar'}));
             parse(p, varargin{:});
@@ -201,10 +204,10 @@ classdef TestMatran < matlab.unittest.TestCase
     
     %% Tests
     
-    %Test bulk class construction
+    %Test bulk classes
     methods (Test)
-        function constructBulk(obj)
-            %constructBulk Checks that each bulk data object can be
+        function bulk_construct(obj)
+            %test_bulk_construct Checks that each bulk data object can be
             %constructed with different levels of input.
             
             nBulk = 10;
@@ -229,37 +232,9 @@ classdef TestMatran < matlab.unittest.TestCase
                 end
             end
             
-        end        
-    end
-    methods (Static)
-        function bulkClasses = getBulkClasses
-            %getBulkClasses Returns a list of all bulk data classes in the
-            %+bulk package.
-            
-            %Get location of the +bulk folder
-            loc = fullfile(fileparts(mfilename('fullpath')), '+bulk');
-            
-            %Find all classes in the +bulk package folder
-            contents = dir(loc);
-            
-            fNames = cell(1, numel(contents));
-            for ii = 1 : numel(fNames)
-                [~, fNames{ii}, ~] = fileparts(contents(ii).name);
-            end
-            fNames = strcat('bulk.', fNames);
-            val = cellfun(@(x) exist(x, 'class'), fNames);
-            bulkClasses = fNames(val ~= 0);
-            
-            assert(~isempty(bulkClasses), ['No classes found in the ', ...
-                '+bulk package folder. Check the codebase.']);
-            
-        end
-    end
-    
-    %Test object methods 
-    methods (Test)
-        function drawEmptyBulk(obj)
-            %drawEmptyBulk Checks that each bulk data object can be
+        end   
+        function bulk_draw_empty(obj)
+            %bulk_draw_empty Checks that each bulk data object can be
             %drawn from a basic constructor call.
             
             obj.TestFigure = figure;
@@ -281,20 +256,49 @@ classdef TestMatran < matlab.unittest.TestCase
                 drawElement(bulkObj, hAx);
             end
         end
-        function testDynamicable_isequal_self_empty(obj)
+    end
+    methods (Static)
+        function bulkClasses = getBulkClasses
+            %getBulkClasses Returns a list of all bulk data classes in the
+            %mni.bulk package.
+            
+            %Get location of the +bulk folder
+            sandbox_loc = fileparts(fileparts(mfilename('fullpath')));
+            bulk_loc    = fullfile(sandbox_loc, 'tbx', 'matran', '+mni', '+bulk');            
+            
+            %Find all classes in the +bulk package folder
+            contents = dir(bulk_loc);
+            
+            fNames = cell(1, numel(contents));
+            for ii = 1 : numel(fNames)
+                [~, fNames{ii}, ~] = fileparts(contents(ii).name);
+            end
+            fNames = strcat('mni.bulk.', fNames);
+            val = cellfun(@(x) exist(x, 'class'), fNames);
+            bulkClasses = fNames(val ~= 0);
+            
+            assert(~isempty(bulkClasses), ['No classes found in the ', ...
+                'mni.bulk package folder. Check the codebase.']);
+            
+        end
+    end
+    
+    %Test mixin
+    methods (Test)
+        function dynamicable_isequal_self_empty(obj)
             
             %Check itself against itself
-            DynA = mixin.Dynamicable;
+            DynA = mni.mixin.Dynamicable;
             assert(isequal(DynA, DynA), '''isequal'' failed for same object');      
         end
-        function testDynamicable_isequal_two_empty(obj)
+        function dynamicable_isequal_two_empty(obj)
             
             %Check itself against another empty
-            DynA = mixin.Dynamicable;
-            DynB = mixin.Dynamicable;            
+            DynA = mni.mixin.Dynamicable;
+            DynB = mni.mixin.Dynamicable;            
             assert(isequal(DynA, DynB), '''isequal'' failed for two empties');            
         end
-        function testDynamicable_isequal_bulk(obj)
+        function dynamicable_isequal_bulk(obj)
             
             %Get list of all bulk objects
             bulkClasses = obj.getBulkClasses;
@@ -376,25 +380,25 @@ classdef TestMatran < matlab.unittest.TestCase
                 end
             end
         end
-        function testImportParameters(obj, LogFcn, Verbose)
+        function testImportParameters(obj, Verbose)
             %testImportParameters Tests the different import parameters for
             %the 'import_matran' function.
             
             h5Files  = obj.AutoH5Files;
             filename = h5Files{1};
             
-            if ischar(LogFcn)
-                fid = fopen(LogFcn, 'w');
-                LogFcn = @(fid)logger([], [], [], fid);
-                bClose = true;
-            else
-                bClose = false;
-            end
+%             if ischar(LogFcn)
+%                 fid = fopen(LogFcn, 'w');
+%                 LogFcn = @(fid)logger([], [], [], fid);
+%                 bClose = true;
+%             else
+%                 bClose = false;
+%             end
             
-            import_matran(filename, 'Verbose', Verbose, 'LogFcn', LogFcn);
-            if bClose
-                fclose(fid);
-            end
+            mni.import_matran(filename, 'Verbose', Verbose); %, 'LogFcn', LogFcn);
+%             if bClose
+%                 fclose(fid);
+%             end
         end
     end
     methods (TestMethodTeardown)
@@ -404,7 +408,7 @@ classdef TestMatran < matlab.unittest.TestCase
             end
         end
     end
-    methods % getFilePath
+    methods % getFilePath, getAllTextImportFiles
        function filename = getFilePath(obj, filename, type)
             %getFilePath Helper method for providing the full-file path
             %based on whether the file is part of the Nastran TPL or is
@@ -459,7 +463,7 @@ classdef TestMatran < matlab.unittest.TestCase
             %importThenDraw Imports the model from the Nastran text file
             %'filename' and draws the model.
             
-            FEM = import_matran(filename, 'Verbose', false);
+            FEM = mni.import_matran(filename, 'Verbose', false);
             
             %obj.UnknownBulk = Meta.UnknownBulk;
             
@@ -501,7 +505,9 @@ function h5FileList = getH5files
 %getH5files Get the list of .h5 files in the
 %'models\auto_generated_h5_data' directory sorted in alphabetical order.
 
-path = 'models\auto_generated_h5_data';
+modelLoc = 'models\auto_generated_h5_data';
+path     = fullfile(fileparts(mfilename('fullpath')), modelLoc);
+
 Contents = dir(path);
 idx = endsWith({Contents.name}, '.h5');
 h5FileList = fullfile(path, sort({Contents(idx).name}));
