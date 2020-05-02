@@ -1,6 +1,6 @@
 
 *.asv
-
-unit_testing/
+*.f04
+*.log
 
 models/auto_generated_h5_data/
