@@ -88,58 +88,7 @@ unknownBulk = [unknownBulk, cat(2, leftover{:})];
 
 end
 
-%Partitioning the Nastran input file
-function [Parameters, BulkData] = extractParameters(BulkData, logfcn)
-%extractParameters Extracts the parameters from the bulk data
-%and returns the cell array 'BD' with all parameter lines
-%removed.
-
-%Find "PARAM" & "MDLPRM" in the input file
-idx_PARAM  = contains(BulkData, 'PARAM');
-idx_MDLPRM = contains(BulkData, 'MDLPRM');
-
-%Extract the name-value data for each parameter
-Parameters.PARAM  = i_extractParamValue(BulkData(idx_PARAM) , logfcn);
-Parameters.MDLPRM = i_extractParamValue(BulkData(idx_MDLPRM), logfcn);
-
-%Remove all parameters from 'BulkData'
-BulkData = BulkData(~or(idx_PARAM, idx_MDLPRM));
-
-    function paramOut = i_extractParamValue(paramData, logfcn)
-        %extractParamValue Extracts the parameter name and value
-        %from each line in 'paramData'.
-        
-        if isempty(paramData) %Escape route
-            paramOut = [];
-            return
-        end
-        
-        %Preallocate
-        name  = cell(size(paramData));
-        value = cell(size(paramData));
-        
-        for i = 1 : numel(paramData)
-            if contains(paramData{i}, ',') %Define delimiter
-                delim = ',';
-            else
-                delim = ' ';
-            end
-            %Split the string
-            temp = strsplit(paramData{i}, delim);
-            %Assign to name/value
-            name{i}  = temp{2};
-            value{i} = temp{3};
-        end
-        %Convert to structure
-        paramOut = cell2struct(value, name);
-        
-        %Inform progress
-        logfcn(sprintf('Extracted the following parameters:'));
-        logfcn(sprintf('\t- %s\n', name{:}));
-        
-    end
-
-end
+%Parsing bulk data
 function [FEM, UnknownBulk] = extractBulkData(BulkData, logfcn)
 %extractBulk Extracts the bulk data from the cell array
 %'BulkData' and returns a collection of bulk data and
