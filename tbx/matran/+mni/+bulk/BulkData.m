@@ -1,4 +1,4 @@
-classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mixin.Dynamicable
+classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mni.mixin.Dynamicable
     %BulkData Base-class of all bulk data objects.
     %
     % TODO: Think about how to handle bulk data types where a particular

@@ -1,6 +1,6 @@
 function [FEModel, FileMeta] = importBulkData(filename, logfcn)
 %importBulkData Imports the Nastran bulk data from a ASCII text file and
-%returns a 'bulk.FEModel' object containing the data.
+%returns a 'mni.bulk.FEModel' object containing the data.
 %
 % Syntax:
 %	- Import a model from a text file (.bdf, .dat)
@@ -37,7 +37,7 @@ if nargin < 2
    logfcn = @logger; %default is to print to command window
 end
 
-%Import the data and return the 'bulk.FEModel' object
+%Import the data and return the 'mni.bulk.FEModel' object
 [FEModel, skippedCards] = importBulkDataFromFile(filename, logfcn);
 
 FileMeta.SkippedBulk = skippedCards;
@@ -48,7 +48,7 @@ end
 %Master function (recursive)
 function [FEM, unknownBulk] = importBulkDataFromFile(bulkFilename, logfcn)
 %importBulkDataFromFile Imports the bulk data from the file and returns an
-%instance of the 'bulk.FEModel' class.
+%instance of the 'mni.bulk.FEModel' class.
 
 filepath = fileparts(bulkFilename);
 if isempty(filepath)
@@ -99,7 +99,7 @@ function [FEM, UnknownBulk] = extractBulkData(BulkData, logfcn)
 logfcn('Extracting bulk data...');
 
 %Preallocate
-FEM = bulk.FEModel();
+FEM = mni.bulk.FEModel();
 UnknownBulk = {};
 
 BulkDataMask = defineBulkMask();

@@ -1,6 +1,6 @@
 function  [FEModel, FileMeta] = importH5(filename, logfcn)
 %importH5 Imports the Nastran bulk data from a HDF5 file and returns a 
-%'bulk.FEModel' object containing the data.
+%'mni.bulk.FEModel' object containing the data.
 %
 % Syntax:
 %	- Import a model from a MSC.Nastran HDF5 file (.h5)
@@ -39,7 +39,7 @@ assert(checkH5ForModelBulk(filename), sprintf(['The h5 file ''%s'' did ', ...
     'not contain any input data. Make sure MDLPARAM HDF5 is set to '      , ...
     'either 0 or 1 in the run file.'], filename));
 
-FEModel      = bulk.FEModel;
+FEModel      = mni.bulk.FEModel;
 FileMeta     = [];
 BulkDataMask = defineBulkMask;
 

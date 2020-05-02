@@ -1,4 +1,4 @@
-classdef Node < bulk.BulkData
+classdef Node < mni.bulk.BulkData
     %Node Describes a point in 3D-space for use in a finite element model.
     %
     % The definition of the 'Node' object matches that of the GRID bulk
@@ -30,7 +30,9 @@ classdef Node < bulk.BulkData
                 'PropTypes'  , {'i'  , 'i' , 'r', 'i' , 'c' , 'i'}   , ...
                 'PropDefault', {''   , 0   , 0  , 0   , ''  , 0 }    , ...
                 'IDProp'     , 'GID', ...
-                'Connections', {'CP', 'bulk.CoordSystem', 'InputCoordSys', 'CD', 'bulk.CoordSystem', 'OutputCoordSys'}, ...
+                'Connections', { ...
+                'CP', 'mni.bulk.CoordSystem', 'InputCoordSys', ...
+                'CD', 'mni.bulk.CoordSystem', 'OutputCoordSys'}, ...
                 'PropMask'   , {'X', 3}, ...
                 'AttrList'   , {'X', {'nrows', 3}}, ...
                 'SetMethod'  , {'PS', @validateDOF});
@@ -57,11 +59,11 @@ classdef Node < bulk.BulkData
         function assignListCardData(obj, propData, index, BulkMeta)
             %assignListCardData 
             
-            assignListCardData@bulk.BulkData(obj, propData, index, BulkMeta)
+            assignListCardData@mni.bulk.BulkData(obj, propData, index, BulkMeta)
             
             %Stack all ID numbers for 'SPOINT' or 'EPOINT'
             %   - Cell notation for list bulk data doers not work with the
-            %    'makeIndices' function for the 'bulk.FEModel' class.
+            %    'makeIndices' function for the 'mni.bulk.FEModel' class.
             obj.IDi = horzcat(obj.IDi{:});
         end
     end

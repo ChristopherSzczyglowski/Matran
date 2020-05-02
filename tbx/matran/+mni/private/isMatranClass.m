@@ -43,7 +43,7 @@ if nargin < 2
     BulkDataMask = defineBulkMask;
 end
 
-prj = 'bulk'; % project folder
+prj = 'mni.bulk'; % project folder
 
 %Initialise the card
 class_str = lower(cardName);

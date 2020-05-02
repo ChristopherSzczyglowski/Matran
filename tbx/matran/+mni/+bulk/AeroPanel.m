@@ -1,4 +1,4 @@
-classdef AeroPanel < bulk.BulkData
+classdef AeroPanel < mni.bulk.BulkData
     %AeroPanel Describes a collection of aerodynamic panels.
     %
     % The definition of the 'AeroPanel' object matches that of the CAERO1
@@ -17,7 +17,10 @@ classdef AeroPanel < bulk.BulkData
                 'PropDefault', {''   , ''   , 0   , 0      , 0       , 0      , 0       , 0     , ''  , 0    , ''  , 0}    , ...
                 'IDProp'     , 'EID', ...
                 'PropMask'   , {'X1', 3, 'X4', 3} , ...
-                'Connections', {'PID', 'PAERO1','AeroBody', 'LSPAN', 'AEFACT', 'SpanDivision', 'LCHORD', 'AEFACT', 'ChordDivision'}, ...
+                'Connections', { ...
+                'PID'   , 'PAERO1', 'AeroBody', ...
+                'LSPAN' , 'AEFACT', 'SpanDivision', ...
+                'LCHORD', 'AEFACT', 'ChordDivision'}, ...
                 'AttrList'   , {'X1', {'nrows', 3}, 'X4', {'nrows', 3}});            
             varargin = parse(obj, varargin{:});
             preallocate(obj);
@@ -41,7 +44,7 @@ classdef AeroPanel < bulk.BulkData
             prpData{ismember(prpNames, 'X1')}   = vertcat(bulkData{ismember(bulkNames, {'X1', 'Y1', 'Z1'})});
             prpData{ismember(prpNames, 'X4')}   = vertcat(bulkData{ismember(bulkNames, {'X4', 'Y4', 'Z4'})});
             
-            assignH5BulkData@bulk.BulkData(obj, prpNames, prpData)
+            assignH5BulkData@mni.bulk.BulkData(obj, prpNames, prpData)
         end
     end
     

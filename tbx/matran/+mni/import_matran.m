@@ -64,7 +64,7 @@ end
 
 %Do some additional actions based on the type of imported data
 switch class(MatranData)    
-    case 'bulk.FEModel'
+    case 'mni.bulk.FEModel'
         %Print summary
         printSummary(MatranData, 'LogFcn', log_fcn, 'RootFile', filename);
         if isempty(Meta.SkippedBulk)

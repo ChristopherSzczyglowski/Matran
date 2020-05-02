@@ -1,4 +1,4 @@
-classdef List < bulk.BulkData
+classdef List < mni.bulk.BulkData
     %List Describes a set of bulk data that can have an arbitrary number of
     %data points.
     %
@@ -33,7 +33,7 @@ classdef List < bulk.BulkData
                 'PropDefault', {''   , '' } , ...
                 'IDProp'     , 'SID', ...
                 'ListProp'   , {'Gi'}, ...
-                'Connections', {'Gi', 'bulk.Node', 'Nodes'});
+                'Connections', {'Gi', 'mni.bulk.Node', 'Nodes'});
             addBulkDataSet(obj, 'ASET1', ...
                 'BulkProps'  , {'C', 'IDi'}, ...
                 'PropTypes'  , {'c', 'i'}  , ...
@@ -96,7 +96,7 @@ classdef List < bulk.BulkData
             prpData(ismember(prpNames, bulkNames)) = bulkData(ismember(bulkNames, prpNames));
             prpData{ismember(prpNames, 'Bi')}      = ...
                 vertcat(bulkData{ismember(bulkNames, {'B1', 'B2', 'B3', 'B4', 'B5', 'B6'})});
-            assignH5BulkData@bulk.BulkData(obj, prpNames, prpData)
+            assignH5BulkData@mni.bulk.BulkData(obj, prpNames, prpData)
         end
     end
     

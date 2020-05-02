@@ -1,4 +1,4 @@
-classdef Material < bulk.BulkData
+classdef Material < mni.bulk.BulkData
     %Material Describes the properties of a bulk.Beam object.
     %
     % The definition of the 'BeamProp' object matches that of the PBEAM

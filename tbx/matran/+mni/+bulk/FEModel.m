@@ -1,4 +1,4 @@
-classdef FEModel < matlab.mixin.SetGet & mixin.Dynamicable
+classdef FEModel < matlab.mixin.SetGet & mni.mixin.Dynamicable
     %FEModel Describes a collection of bulk data objects to which results
     %sets can be attached to.
     %
@@ -19,8 +19,8 @@ classdef FEModel < matlab.mixin.SetGet & mixin.Dynamicable
             %addBulk Adds the 'BulkObj' to the FEModel as a dynamic
             %property.
             
-            assert(isa(BulkObj, 'bulk.BulkData'), ['Expected the bulk ', ...
-                'data object to be a subclass of the ''bulk.BulkData'' class.']);
+            assert(isa(BulkObj, 'mni.bulk.BulkData'), ['Expected the bulk ', ...
+                'data object to be a subclass of the ''mni.bulk.BulkData'' class.']);
             cn = BulkObj.CardName;
             if isempty(cn)
                 return
@@ -195,8 +195,8 @@ classdef FEModel < matlab.mixin.SetGet & mixin.Dynamicable
     end
     methods
         function combine(obj)
-            %combine Combines the bulk data from an array of 'bulk.FEModel'
-            %objects into a single model.
+            %combine Combines the bulk data from an array of
+            %'mni.bulk.FEModel' objects into a single model.
             
             if numel(obj) == 1
                 return

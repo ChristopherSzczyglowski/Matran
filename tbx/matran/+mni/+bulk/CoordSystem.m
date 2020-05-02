@@ -1,4 +1,4 @@
-classdef CoordSystem < bulk.BulkData
+classdef CoordSystem < mni.bulk.BulkData
     %CoordSystem Describes a rectangular coordinate system.
     %
     % The definition of the 'CoordSys' object matches that of the CORD2R
@@ -17,7 +17,7 @@ classdef CoordSystem < bulk.BulkData
                 'PropTypes'  , {'i'  , 'i'  , 'r', 'r', 'r'}, ...
                 'PropDefault', {''   , 0    , 0  , 0  , 0  }, ...
                 'IDProp'     , 'CID', ...
-                'Connections', {'RID', 'bulk.CoordSystem', 'InputCoordSys'}, ...
+                'Connections', {'RID', 'mni.bulk.CoordSystem', 'InputCoordSys'}, ...
                 'PropMask'   , {'A', 3, 'B', 3, 'C', 3}, ...
                 'AttrList'   , {'A', {'nrows', 3}, 'B', {'nrows', 3}, 'C', {'nrows', 3}});
             
@@ -45,7 +45,7 @@ classdef CoordSystem < bulk.BulkData
             prpData{ismember(prpNames, 'B')}   = vertcat(bulkData{ismember(bulkNames, {'B1', 'B2', 'B3'})});
             prpData{ismember(prpNames, 'C')}   = vertcat(bulkData{ismember(bulkNames, {'C1', 'C2', 'C3'})});
             
-            assignH5BulkData@bulk.BulkData(obj, prpNames, prpData)
+            assignH5BulkData@mni.bulk.BulkData(obj, prpNames, prpData)
         end
     end
     

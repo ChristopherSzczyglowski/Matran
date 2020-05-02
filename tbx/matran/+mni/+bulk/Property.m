@@ -1,4 +1,4 @@
-classdef Property < bulk.BulkData
+classdef Property < mni.bulk.BulkData
     %Property Describes the properties of a bulk data element.
     %
     % Valid Bulk Data Types:
