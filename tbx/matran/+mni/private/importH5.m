@@ -42,12 +42,13 @@ assert(checkH5ForModelBulk(filename), sprintf(['The h5 file ''%s'' did ', ...
 FEModel      = mni.bulk.FEModel;
 FileMeta     = [];
 BulkDataMask = defineBulkMask;
+UnknownBulk  = {};
 
 logfcn(sprintf('Beginning file read of file ''%s'' ...', filename));
 
 %Traverse the hierachy
 MetaGroup = h5info(filename, '/NASTRAN/INPUT');     
-[FEModel, skippedCards] = extractData(filename, MetaGroup, FEModel, BulkDataMask, logfcn);
+[FEModel, skippedCards] = extractData(filename, MetaGroup, FEModel, BulkDataMask, logfcn, UnknownBulk);
 
 FileMeta.SkippedBulk = skippedCards;
 FileMeta.UnknownBulk = strtrim(cellfun(@(x) x(1 : strfind(x, '-') - 1), skippedCards, 'Unif', false));
@@ -75,7 +76,7 @@ tf = true;
 
 end
 
-function [FEM, UnknownBulk] = extractData(filename, MetaGroup, FEM, BulkDataMask, logfcn)
+function [FEM, UnknownBulk] = extractData(filename, MetaGroup, FEM, BulkDataMask, logfcn, UnknownBulk)
 %findDataSet Extracts all the data from the .h5 file 'filename' into a
 %Matlab structure which preserves the .h5 data hierachy.
 %
@@ -85,28 +86,37 @@ function [FEM, UnknownBulk] = extractData(filename, MetaGroup, FEM, BulkDataMask
 %     group name.
 
 allBulkNames = fieldnames(BulkDataMask);
-UnknownBulk  = {};
+
+%Keep track of the meta group names
+if isempty(MetaGroup.Groups)
+    metagroupNames = {};
+else
+    metagroupNames = {MetaGroup.Groups.Name};
+end
 
 %Check if the leaf defines a useable Matran class
 leaf = MetaGroup.Name(max(strfind(MetaGroup.Name, '/')) + 1 : end);
 cn   = assignCardName(leaf, allBulkNames);
 
+%Check to see if we can extract any data
 if isempty(cn) && ~isempty(MetaGroup.Datasets)
     %Look at the Datasets for possible bulk data names
     names = {MetaGroup.Datasets.Name};
-    for i = 1 : numel(names)      
+    for i = 1 : numel(names) 
         %Get card name & Matran class
         cn = assignCardName(names{i}, allBulkNames);
         [bClass, str] = isMatranClass(cn, BulkDataMask);
         if ~bClass
             logfcn(sprintf('%-10s %-8s (%8s)', 'Skipped', names{i}, blanks(8)));
+            UnknownBulk{end + 1} = sprintf( ...
+            '%8s - %6s entry/entries', names{i}, 'n/a   ');
             continue
         end
         %Use built-in 'h5read' to extract data
         groupset = strcat([MetaGroup.Name, '/'], names{i});
-        [bulkNames, bulkData, nCard] = parseH5Data(filename, groupset);        
+        [bulkNames, bulkData, nCard] = mni.bulk.BulkData.parseH5Data(filename, groupset);   
         %Tell the user
-        logfcn(sprintf('%-10s %-8s (%8i)', 'Extracting',cn, nCard), true);        
+        logfcn(sprintf('%-10s %-8s (%8i)', 'Extracting', cn, nCard), true);        
         %Initialise the object
         fcn     = str2func(str);
         BulkObj = fcn(cn, nCard);        
@@ -118,18 +128,32 @@ if isempty(cn) && ~isempty(MetaGroup.Datasets)
 else
     [bClass, str] = isMatranClass(cn, BulkDataMask);
     if bClass 
-        %Add custom method for each class for importing this type of data
-        %from the .h5 file.
-        logfcn(sprintf('%-10s %-8s (%8s)', 'Found', cn, blanks(8)));
+        %Get the remaining data below this group
+        h5Struct = readH5intoStruct(filename, MetaGroup);
+        logfcn(sprintf('%-10s %-8s (%8s)', 'Extracting',cn, blanks(8)), true); 
+        %Build the object
+        fcn     = str2func(str);
+        BulkObj = fcn(cn);
+        %Assign data
+        [bulkNames, bulkData] = parseH5DataGroup(BulkObj, h5Struct);
+        assignH5BulkData(BulkObj, bulkNames, bulkData);  
+        %Add object to the model
+        addBulk(FEM, BulkObj);           
+        %Remove this group from the list so that we don't get duplicates
+        metagroupNames(contains(metagroupNames, MetaGroup.Name)) = [];
     else
         logfcn(sprintf('%-10s %-8s (%8s)', 'Skipped', leaf, blanks(8)));
+        UnknownBulk{end + 1} = sprintf( ...
+            '%8s - %6s entry/entries', leaf, 'n/a   ');
     end
 end
 
 %Recurse through groups 
-if ~isempty(MetaGroup.Groups) 
-    for iG = 1 : numel(MetaGroup.Groups)
-        FEM = extractData(filename, MetaGroup.Groups(iG), FEM, BulkDataMask, logfcn);
+if ~isempty(metagroupNames)
+    allMetagroupNames = {MetaGroup.Groups.Name};
+    for iG = 1 : numel(metagroupNames)
+        idx = ismember(allMetagroupNames, metagroupNames{iG});
+        [FEM, UnknownBulk] = extractData(filename, MetaGroup.Groups(idx), FEM, BulkDataMask, logfcn, UnknownBulk);
     end
 end
 
@@ -201,5 +225,39 @@ end
 %Transpose data where nRows == nCard
 idxMismatch = (cellfun(@(x) size(x, 1), bulkData) == nCard);
 bulkData(idxMismatch)  = cellfun(@transpose, bulkData(idxMismatch), 'Unif', false);
+
+end
+
+function h5Struct = readH5intoStruct(filename, MetaGroup)
+
+%If MetaGroup.DataSet is populated then extract data
+if ~isempty(MetaGroup.Datasets)
+    names = {MetaGroup.Datasets.Name};
+    for i = 1 : numel(names)
+        %Formulate 'groupset'
+        groupset = strcat([MetaGroup.Name, '/'], names{i});
+        %Use built-in 'h5read' to extract data
+        h5Data          = h5read(filename, groupset);        
+        h5Struct.(names{i}) = h5Data;
+    end
+end
+
+%If MetaGroup.Groups is populated then ...
+%... recursively loop through groups and find Datasets
+if ~isempty(MetaGroup.Groups)
+    gNames = formatGroupName({MetaGroup.Groups.Name});
+    for iG = 1 : numel(MetaGroup.Groups)
+        h5Struct.(gNames{iG}) = readH5intoStruct(filename, MetaGroup.Groups(iG));
+    end
+end
+
+    function groupName = formatGroupName(groupString)
+        %formatGroupName Grabs the final group name from the group set
+        %string.
+        
+        groupName = cellfun(@(x) x(find(x == '/', 1, 'last') + 1 : end), ...
+            groupString, 'Unif', false);
+        
+    end
 
 end

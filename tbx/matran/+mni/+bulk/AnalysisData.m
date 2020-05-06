@@ -64,6 +64,18 @@ classdef AnalysisData < mni.bulk.BulkData
     end
         
      methods % assigning data during import
+         function [bulkNames, bulkData] = parseH5DataGroup(obj, h5Struct)
+            %parseH5DataGroup Parse the data in the h5 data group
+            %'h5Struct' and return the bulk names and data. 
+            
+            if ~strcmp(obj.CardName, 'EIGRL')
+                error('Update code for new h5 entry.');
+            end
+            
+            %Just need to index into the 'IDENTITY' field then pass it on
+            [bulkNames, bulkData, ~] = mni.bulk.BulkData.parseH5Data(h5Struct.IDENTITY);
+            
+        end
         function assignH5BulkData(obj, bulkNames, bulkData)
             %assignH5BulkData Assigns the object data during the import
             %from a .h5 file.

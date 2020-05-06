@@ -13,7 +13,7 @@ classdef Constraint < mni.bulk.BulkData
                     
             %Initialise the bulk data sets
             addBulkDataSet(obj, 'SPC', ...
-                'BulkProps'  , {'SID', 'G', 'C', 'D'}   , ...
+                'BulkProps'  , {'SID', 'G' , 'C', 'D'}   , ...
                 'PropTypes'  , {'i'  , 'i' , 'r' , 'r' }, ...
                 'PropDefault', {0    , 0   , 0   , 0   }, ...
                 'IDProp'     , 'SID', ...
@@ -23,8 +23,9 @@ classdef Constraint < mni.bulk.BulkData
                 'BulkProps'  , {'SID', 'C', 'G'}, ...
                 'PropTypes'  , {'i'  , 'c', 'i'}, ...
                 'PropDefault', {''   , '' ,''}  , ...
-                'IDProp'     , 'SID', ...
-                'ListProp'   , {'G'}, ...
+                'IDProp'     , 'SID' , ...
+                'ListProp'   , {'G'} , ...
+                'H5ListName' , {'ID'}, ...
                 'Connections', {'G', 'mni.bulk.Node', 'Nodes'}, ...
                 'SetMethod'  , {'C', @validateDOF});
             
@@ -35,31 +36,33 @@ classdef Constraint < mni.bulk.BulkData
     end
     
     methods % assigning data during import
-        function assignH5BulkData(obj, bulkNames, bulkData)
-            %assignH5BulkData Assigns the object data during the import
-            %from a .h5 file.
-                        
-            prpNames   = obj.CurrentBulkDataProps;
+        function [bulkNames, bulkData] = parseH5DataGroup(obj, h5Struct)
+            %parseH5DataGroup Parse the data in the h5 data group
+            %'h5Struct' and return the bulk names and data. 
+            %
+            % The list data can be specified in the 'G' field or in the
+            % 'IDENTITY' field using the "THRU" notation.
             
-            %Index of matching bulk data names
-            [~, ind]  = ismember(bulkNames, prpNames);
-            [~, ind_] = ismember(prpNames, bulkNames);
+            fNames = fieldnames(h5Struct);
+            if ~any(ismember(fNames, {'SPC1_THRU', 'SPC1_G'}))
+                error('Update code for new format.');
+            end
+            if numel(h5Struct.SPC1_G.IDENTITY.SID) > 1
+                error('Update code to handle multiple datasets.');
+            end   
             
-            %Build the prop data 
-            prpData  = cell(size(prpNames));            
-            prpData(ind(ind ~= 0)) = bulkData(ind_(ind_ ~= 0));            
-            switch obj.CardName                
-                case 'SPC1'
-                    if any(contains(bulkNames, {'FIRST', 'SECOND'}))
-                        %Card is using "THRU" command to specify list
-                        prpData{ismember(prpNames, 'G')} = ...
-                            bulkData{ismember(bulkNames, 'FIRST')} : ...
-                            bulkData{ismember(bulkNames, 'SECOND')};
-                    else
-                        error('Check code');
-                    end                   
-            end                        
-            assignH5BulkData@mni.bulk.BulkData(obj, prpNames, prpData)
+            nGrps = numel(fNames);
+            bn = cell(1, nGrps);
+            bd = cell(1, nGrps);
+            for ii = 1 : nGrps
+                [bn{ii}, bd{ii}] = parseH5DataGroup@mni.bulk.BulkData( ...
+                    obj, h5Struct.(fNames{ii}));
+            end
+            bd = vertcat(bd{:});
+            bulkNames = bn{1};
+            bulkData  = arrayfun(@(ii) horzcat(bd{:, ii}), ...
+                1 : numel(bulkNames), 'Unif', false);
+            
         end
     end
     

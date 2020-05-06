@@ -438,6 +438,106 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mni.mixin
     end
     
     methods % assigning data during import
+        function [bulkNames, bulkData] = parseH5DataGroup(obj, h5Struct)
+            %parseH5DataGroup Parse the data in the h5 data group
+            %'h5Struct' and return the bulk names and data. 
+            
+            h5Names = fieldnames(h5Struct);
+            
+            BulkDataStruct = obj.CurrentBulkDataStruct;
+            listProp  = BulkDataStruct.PropList;       
+            h5Tokens  = BulkDataStruct.H5ListName;
+            bulkNames = obj.CurrentBulkDataProps;
+            bulkData  = cell(1, numel(bulkNames));
+           
+            if isempty(listProp)
+                error('Update code.');
+            end            
+%             if numel(listProp) > 1
+%                 error('Update code for multiple list entries');
+%             end
+            
+            %Check if the data is stashed in the 'IDENTITY' field
+            if isfield(h5Struct, 'IDENTITY')
+                h5DataStruct = h5Struct.IDENTITY;
+            else
+                h5DataStruct = h5Struct;
+            end            
+            
+            %Cell notation is easier to index
+            dataNames = fieldnames(h5DataStruct);
+            data      = struct2cell(h5DataStruct);
+            
+            %Replace 'ID' if it is found
+            dataNames(ismember(dataNames, 'ID')) = {obj.CurrentBulkDataStruct.IDProp};
+            
+            %Allocate anything that maps straight across
+            [~, ind_] = ismember(bulkNames, dataNames);
+            [~, ind]  = ismember(dataNames, bulkNames);
+            bulkData(ind_(ind_~=0)) = data(ind(ind~=0));            
+  
+            if isfield(h5Struct, 'IDENTITY') && numel(h5Names) > 1 %List data in seperate STRUCT                 
+                %Strip IDENTITY as it is no longer needed
+                h5Names      = h5Names(~ismember(h5Names, 'IDENTITY'));          
+                %Parse
+                assert(~isempty(h5Tokens), 'Expected the ''H5ListName'' meta to be defined.');
+                fNames = fieldnames(h5DataStruct);
+                %Index the data
+                for ii = 1 : numel(listProp)
+                    %Grab tokens
+                    h5_field = h5Names(contains(h5Names, listProp{ii}, 'IGNORECASE', true));
+                    if isempty(h5_field) && numel(h5Names) == 1
+                        %If there was no match but there is only one other
+                        %field then go with that
+                        h5_field = h5Names;
+                    end
+                    assert(~isempty(h5_field), ['Unable to resolve the ', ...
+                        'h5 fieldnames with the list property name.']);
+                    h5_tok   = h5Tokens{ismember(listProp, listProp{ii})};
+                    h5_field = h5_field{:};
+                    pos_tok = [h5_field, '_POS'];
+                    len_tok = [h5_field, '_LEN'];
+                    if ~all(ismember({pos_tok, len_tok}, fNames)) && ...
+                        all(ismember({'POS', 'LEN'}, fNames))
+                        %Position and length are not being prefixed 
+                        pos_tok = 'POS';
+                        len_tok = 'LEN';
+                    end
+                    %Define bounds for indexing
+                    lb = h5DataStruct.(pos_tok) +  1;
+                    ub = h5DataStruct.(pos_tok) + h5DataStruct.(len_tok);                    
+                    %Assign the data
+                    bulkData{ismember(bulkNames, listProp{ii})} = ...
+                        arrayfun(@(ii) h5Struct.(h5_field).(h5_tok)(lb(ii) : ub(ii))', ...
+                        1 : numel(lb), 'Unif', false);
+                end
+                return
+            end
+            
+            %There are multiple ways to denote the first and last terms
+            %when using the "THRU" format 
+            %   - This is really stupid programming from MSC...
+            thru_toks = {{'FIRST', 'SECOND'} ; strcat(h5Tokens, {'1', '2'})};
+            idx = cellfun(@(x) any(isfield(h5DataStruct, x)), thru_toks);
+            if any(idx) %"THRU" format  
+                if numel(listProp) > 1 
+                    error('Update code');
+                end
+                if isfield(h5DataStruct, 'ID') && numel(h5DataStruct.SID) > 1
+                    error('Update code');
+                end              
+                tok_1 = thru_toks{idx}{1};
+                tok_2 = thru_toks{idx}{2};
+                bulkData{ismember(bulkNames, listProp)} = arrayfun(@(ii) ...
+                    h5DataStruct.(tok_1)(ii) : h5DataStruct.(tok_2)(ii), ...
+                    1 : numel(h5DataStruct.(tok_1)), 'Unif', false);
+                return
+            end
+            
+            %If we get this far then we need to update the code.
+            error('Unknown format. Update code.');
+            
+        end
         function assignH5BulkData(obj, bulkNames, bulkData)
             %assignH5BulkData Assigns the object data during the import
             %from a .h5 file.
@@ -453,7 +553,15 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mni.mixin
                     'unknown to the ''%s'' card:\n\t%s\n\n'], obj.CardName, ...
                     strjoin(bulkNames(~idx), ', '));
             end
-            set(obj, prpNames(ind(ind ~= 0)), bulkData(idx));
+            prpNames = prpNames(ind(ind ~= 0));
+            bulkData = bulkData(idx);
+            %Remove empties
+            idx = not(cellfun(@isempty, bulkData));
+            bulkData = bulkData(idx);
+            prpNames = prpNames(idx);
+            
+            %Assign
+            set(obj, prpNames, bulkData);
             
         end
         function assignCardData(obj, propData, index, BulkMeta)
@@ -670,6 +778,49 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mni.mixin
                 
             end
                        
+        end
+    end
+    methods (Static)
+        function [bulkNames, bulkData, nCard] = parseH5Data(H5Struct, groupset)
+            %parseH5Data Parses a MATLAB structure which has been generated
+            %by 'h5read(filename, grpname'. It is expected that the hdf5
+            %file matches the MSC.Nastran schema.
+            
+            if nargin == 2 && ischar(H5Struct)
+                %Passing in a h5 filename and group name?
+                H5Struct = h5read(H5Struct, groupset);
+            end
+            if iscellstr(H5Struct) && iscell(groupset)
+                bulkNames = H5Struct;
+                bulkData  = groupset;
+            elseif isstruct(H5Struct)
+                bulkNames  = fieldnames(H5Struct)';
+                bulkData   = struct2cell(H5Struct)'; %MUST BE A ROW VECTOR TO USE 'set(obj, ...)'
+            else
+                error('Unknown inputs');
+            end
+            
+            %Strip DOMAIN_ID (if present)
+            idx = ismember(bulkNames, 'DOMAIN_ID');
+            bulkNames(idx) = [];
+            bulkData(idx)  = [];
+            
+            %Convert char data to cell-str
+            idxChar = cellfun(@ischar, bulkData);
+            bulkData(idxChar) = cellfun(@(x) cellstr(x'), bulkData(idxChar), 'Unif', false);
+            
+            %Determine number of cards
+            n = cellfun(@length, bulkData(not(cellfun(@ischar, bulkData))));
+            if any(diff(n) ~= 0)
+                nCard = mode(n);
+            else
+                nCard = n(1);
+            end
+            
+            %Transpose data where nRows == nCard
+            idxMismatch = (cellfun(@(x) size(x, 1), bulkData) == nCard);
+            bulkData(idxMismatch)  = cellfun(@transpose, bulkData(idxMismatch), 'Unif', false);
+            
         end
     end
         
