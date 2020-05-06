@@ -7,8 +7,6 @@
 %
 % Detailed Description:
 %	- Runs all import tests except those which use large files
-%   - Does not run the test for comparing two files from .bdf and .h5 then
-%     comparing.
 %   - Also runs the micro tests in 'run_micro_tests'.
 % 
 % See also: 
@@ -37,9 +35,12 @@ import matlab.unittest.selectors.HasProcedureName;
 import_suite = TestSuite.fromClass(?TestMatran, 'ProcedureName','*import*');
 
 %Filter tests with large import files
+large_bdf = fullfile(fileparts(matlab.desktop.editor.getActiveFilename), ...
+    '\models\auto_generated_h5_data\bd03fix_temp.h5');
 import_suite = import_suite.selectIf(~HasParameter( ...
     'Property', 'TPLTextImportFiles', 'Value', '\doc\dynamics\bd03fix.dat'));
-import_suite = import_suite.selectIf(~HasProcedureName('importBdfAndH5ThenCompare'));
+import_suite = import_suite.selectIf(~HasParameter( ...
+    'Property', 'AutoH5Files', 'Value', large_bdf));
 
 TR_ = run(import_suite);
 

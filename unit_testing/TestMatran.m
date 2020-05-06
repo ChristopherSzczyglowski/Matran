@@ -354,7 +354,7 @@ classdef TestMatran < matlab.unittest.TestCase
             [~, nam, ~]  = fileparts(AutoH5Files);
             allTextFiles = obj.AllTextImportFiles;
             [~, txtNames, ~] = obj.getFileParts(allTextFiles);     
-            idx = ismember(strcat(txtNames, '_temp'), nam);
+            idx = ismember(strcat(lower(txtNames), '_temp'), nam);
             assert(nnz(idx) == 1, sprintf(['Unable to find the text '  , ...
                 'import file that corresponds to the .h5 file ''%s''.'], ...
                 AutoH5Files));
@@ -364,12 +364,18 @@ classdef TestMatran < matlab.unittest.TestCase
             FEM_bdf = importThenDraw(obj, txtFile);            
             FEM_h5  = importThenDraw(obj, AutoH5Files);
             if ~isequal(FEM_bdf, FEM_h5)
-                %If the FEMs are inequal it is likely 
+                %If the FEMs are inequal it is likely
                 prp_bdf = FEM_bdf.BulkDataNames;
                 prp_h5  = FEM_h5.BulkDataNames;
                 prp_all = unique([prp_bdf, prp_h5]);
                 idxH5  = ~ismember(prp_all, prp_h5);
                 idxBDF = ~ismember(prp_all, prp_bdf);
+                if nnz(idxBDF) == 1 && strcmp(prp_all{idxBDF}, 'EIGRL')
+                    %The H5 file from MSC.Nastran automatically generates
+                    %an EIGRL card for every EIGR card. This difference is
+                    %fine and does no constitute an error.
+                    return
+                end
                 if any(idxH5) || any(idxBDF)
                     error('matlab:matran:unequal_FEM', ['The two FEMs are ', ...
                         'not equal.\n\n\tH5 file: %s\n\tBDF file: %s\n\n\t', ...
