@@ -34,11 +34,14 @@ import matlab.unittest.TestSuite
 import matlab.unittest.TestRunner
 import matlab.unittest.plugins.CodeCoveragePlugin
 
+matran_loc = fullfile(fileparts(fileparts(mfilename('fullpath'))), ...
+    'tbx', 'matran', '+mni');
+
 %Generate the code coverage report
 suite  = TestSuite.fromClass(?TestMatran);
 runner = TestRunner.withTextOutput;
-runner.addPlugin(CodeCoveragePlugin.forFolder(pwd));
+runner.addPlugin(CodeCoveragePlugin.forFolder(matran_loc, 'IncludingSubfolders', true));
 TestResult = runner.run(suite);
 
 %Get the package dependencies
-[fList, pList] = matlab.codetools.requiredFilesAndProducts('TestMatran.m');
+%[fList, pList] = matlab.codetools.requiredFilesAndProducts('TestMatran.m');
