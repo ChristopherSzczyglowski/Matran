@@ -63,10 +63,10 @@ classdef AnalysisData < mni.bulk.BulkData
         end
     end
         
-     methods % assigning data during import
-         function [bulkNames, bulkData] = parseH5DataGroup(obj, h5Struct)
+    methods % assigning data during import
+        function [bulkNames, bulkData] = parseH5DataGroup(obj, h5Struct)
             %parseH5DataGroup Parse the data in the h5 data group
-            %'h5Struct' and return the bulk names and data. 
+            %'h5Struct' and return the bulk names and data.
             
             if ~strcmp(obj.CardName, 'EIGRL')
                 error('Update code for new h5 entry.');
@@ -83,7 +83,7 @@ classdef AnalysisData < mni.bulk.BulkData
             prpNames   = obj.CurrentBulkDataProps;
             
             %Build the prop data
-            prpData       = cell(size(prpNames));            
+            prpData       = cell(size(prpNames));
             prpData(ismember(prpNames, bulkNames)) = bulkData(ismember(bulkNames, prpNames));
             switch obj.CardName
                 case 'MKAERO1'
@@ -99,7 +99,7 @@ classdef AnalysisData < mni.bulk.BulkData
             assignH5BulkData@mni.bulk.BulkData(obj, prpNames, prpData)
             
         end
-     end
+    end
     
 end
 
