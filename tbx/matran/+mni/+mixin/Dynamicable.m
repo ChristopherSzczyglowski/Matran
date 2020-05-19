@@ -52,8 +52,10 @@ classdef Dynamicable < dynamicprops
             if ~iscell(prpName)
                 prpName = {prpName};
             end
-            assert(all(cellfun(@isvarname, prpName)), ['The dynamic ', ...
-                'property must be a valid variable name']);
+            idx = cellfun(@isvarname, prpName);
+            assert(all(idx), sprintf(['The dynamic property must be a ' , ...
+                'valid variable name. The following names did not pass ', ...
+                '''isvarname'':\n\n\t%s\n'], strjoin(prpName, ', ')));
             
             idx = cellfun(@(x) isprop(obj, x), prpName);
             if all(idx)
@@ -76,6 +78,11 @@ classdef Dynamicable < dynamicprops
             p = [];
             if isempty(obj.DynamicProps)
                 return
+            end
+            if ~ischar(prpName) || ~iscellstr(prpName)
+                warning(['Expected ''prpName'' to be a variable name ', ...
+                    'or a cell-string of variable names.']);
+                    return
             end
             p = obj.DynamicProps(ismember({obj.DynamicProps.Name}, prpName)); 
         end
