@@ -57,38 +57,42 @@ file_map = { ...
 if nargin < 1 || isempty(filename)
    filename = []; 
 end
-[filename, import_fcn, log_fcn] = parse_inputs(prmpt, file_map, filename, varargin{:});
+[filename, import_fcn, log_fcn, args] = parse_inputs(prmpt, file_map, filename, varargin{:});
 if isempty(filename)
     return
 end
 
 %Import the data
-[MatranData, Meta] = import_fcn(filename, log_fcn);
+[MatranData, Meta] = import_fcn(filename, log_fcn, args{:});
 
 %Do some additional actions based on the type of imported data
-switch class(MatranData)    
-    case 'mni.bulk.FEModel'
-        %Print summary
-        printSummary(MatranData, 'LogFcn', log_fcn, 'RootFile', filename);
-        if isempty(Meta.SkippedBulk)
-            log_fcn('All bulk data entries were successfully extracted!');
-        else
-            log_fcn(sprintf(['The following cards have not been extracted ', ...
-                'from the file ''%s'':\n\n\t%-s\n'], filename, ...
-                sprintf('%s\n\t', Meta.SkippedBulk{:})));
-        end
-        %Make indices between bulk data objects
-        makeIndices(MatranData);  
-        %TODO - Construct node coordinates and transformation matrices, etc.
-    otherwise
-        
+for ii = 1 : numel(MatranData)
+    switch class(MatranData(ii))
+        case 'mni.bulk.FEModel'
+            %Print summary
+            printSummary(MatranData(ii), 'LogFcn', log_fcn, 'RootFile', filename);
+            if isempty(Meta.SkippedBulk)
+                log_fcn('All bulk data entries were successfully extracted!');
+            else
+                log_fcn(sprintf(['The following cards have not been extracted ', ...
+                    'from the file ''%s'':\n\n\t%-s\n'], filename, ...
+                    sprintf('%s\n\t', Meta.SkippedBulk{:})));
+            end
+            %Make indices between bulk data objects
+            makeIndices(MatranData(ii));
+            %TODO - Construct node coordinates and transformation matrices, etc.
+        case 'mni.result.ResultSet'
+            
+        otherwise
+            
+    end
 end
 
 varargout{1} = MatranData;
 
 end
 
-function [filename, import_fcn, log_fcn] = parse_inputs(prmpt, file_map, filename, varargin)
+function [filename, import_fcn, log_fcn, args] = parse_inputs(prmpt, file_map, filename, varargin)
 %parse_inputs Checks the user inputs and returns the file name, import
 %function handle and logging function handle.
 
@@ -98,12 +102,16 @@ import_fcn = [];
 p = inputParser;
 addParameter(p, 'LogFcn' , @logger, @(x)isa(x, 'function_handle'));
 addParameter(p, 'Verbose', true   , @(x)validateattributes(x, {'logical'}, {'scalar'})); 
+addParameter(p, 'ImportMode', 'both');
 parse(p, varargin{:});
 if p.Results.Verbose
     log_fcn = p.Results.LogFcn;
 else
     log_fcn = @(s, a, b) fprintf(''); %dummy function 
 end
+
+%Construct additional arguments to be passed straight to import method
+args = {'ImportMode', p.Results.ImportMode};
 
 %Number of categories of files we are dealing with
 %   - e.g. input data, results, etc.
