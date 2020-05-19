@@ -1,4 +1,4 @@
-classdef FEModel < matlab.mixin.SetGet & mni.mixin.Dynamicable
+classdef FEModel < mni.mixin.Collector
     %FEModel Describes a collection of bulk data objects to which results
     %sets can be attached to.
     %
@@ -8,33 +8,29 @@ classdef FEModel < matlab.mixin.SetGet & mni.mixin.Dynamicable
     % TODO - Add a method for tidying up the PBEAM/PBAR entries and
     % defining default values.
     
-    properties (SetAccess = private, Hidden = true)
-        %Cell array of character vectors containing the names of the bulk
-        %data properties added using the 'addBulk' method.
-        BulkDataNames = {};
+    properties (Dependent)
+        %Names of the bulk data properties in the collection
+        BulkDataNames 
+    end
+    
+    methods % set / get
+        function val = get.BulkDataNames(obj) %get.BulkDataNames
+            val = obj.ItemNames;
+        end
+    end
+    
+    methods % construction
+        function obj = FEModel
+            
+            %Update collection parameters
+            obj.CollectionClass       = 'mni.bulk.BulkData';
+            obj.CollectionDescription = 'bulk data';
+            obj.AssignMethod          = @combine;
+            
+        end
     end
     
     methods (Sealed) % managing a collection of bulk data
-        function addBulk(obj, BulkObj)
-            %addBulk Adds the 'BulkObj' to the FEModel as a dynamic
-            %property.
-            
-            assert(isa(BulkObj, 'mni.bulk.BulkData'), ['Expected the bulk ', ...
-                'data object to be a subclass of the ''mni.bulk.BulkData'' class.']);
-            cn = BulkObj.CardName;
-            if isempty(cn)
-                return
-            end
-            
-            if isprop(obj, cn)
-                combine([obj.(cn), BulkObj]);
-            else                
-                addDynamicProp(obj, cn);
-                obj.(cn) = BulkObj;
-                obj.BulkDataNames = [obj.BulkDataNames, {cn}];
-            end
-            
-        end
         function makeIndices(obj)
             %makeIndices Builds the connections between different bulk data
             %objects in the model.
@@ -223,7 +219,7 @@ classdef FEModel < matlab.mixin.SetGet & mni.mixin.Dynamicable
                 if ~isprop(obj(1), bulkNames{iB})
                     fcn    = str2func(class(BulkObj));
                     NewObj = fcn(nam, numel(prpVal{1}));
-                    addBulk(obj(1), NewObj);
+                    addItem(obj(1), NewObj);
                 end
                 set(obj(1).(nam), prpNames, prpVal);
             end
