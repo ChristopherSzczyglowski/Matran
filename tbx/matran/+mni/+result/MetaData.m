@@ -71,6 +71,12 @@ classdef (Abstract) MetaData < mni.mixin.Entity
             'MODULE'        , 'MODULE'};
     end
     
+    methods % set / get
+        function val = get.Eigenvalue(obj) %get.Eigenvalue
+            val = complex(obj.Time_Freq_EigReal, obj.EigImaginary);
+        end
+    end
+    
     methods (Access = protected)
         function addResultsType(obj, type, descr)
             %addResultsType

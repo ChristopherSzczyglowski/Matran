@@ -223,6 +223,52 @@ classdef TestMatran < matlab.unittest.TestCase
     
     %% Tests
     
+    %Generic objects
+    methods (Test)
+        function obj_construct(obj)
+           %obj_construct Checks that we can construct one of every type of
+           %object in the package.
+                      
+           instantiableClasses = obj.getAllInstatiableClasses;           
+           for ii = 1 : numel(instantiableClasses)
+               func = str2func(instantiableClasses{ii});
+               func();               
+           end
+           
+        end
+        function obj_display(obj)
+            %obj_display Checks that we can display each object in the
+            %collection, even when 
+            %
+            % This test will check for any non-hidden, dependent properties
+            % that don't provide a default value when the object is empty.
+            
+            instantiableClasses = obj.getAllInstatiableClasses;
+            for ii = 1 : numel(instantiableClasses)
+                func      = str2func(instantiableClasses{ii});
+                MatranObj = func();
+                disp(MatranObj);
+            end
+        end
+        function obj_get_props(obj)
+            %obj_get_props Checks that each property can be accessed from
+            %an empty state.
+            %
+            % This test will check for any hidden, dependent properties 
+            % that don't provide a default value when the object is empty. 
+            
+            instantiableClasses = obj.getAllInstatiableClasses;
+            for ii = 1 : numel(instantiableClasses)
+                func      = str2func(instantiableClasses{ii});
+                MatranObj = func();
+                prps = properties(MatranObj);
+                for jj = 1 : numel(prps)
+                    MatranObj.(prps{jj});
+                end
+            end
+        end
+    end
+    
     %Bulk data
     methods (Test)
         function bulk_construct(obj)
@@ -318,6 +364,7 @@ classdef TestMatran < matlab.unittest.TestCase
             
             Collection  = eval(CollectorClass);
             itemClasses = ClassNameFunc();
+            itemClasses = obj.screenAbstractClass(itemClasses);
             for ii = 1 : numel(itemClasses)
                 func = str2func(itemClasses{ii});
                 Item = func();
@@ -516,6 +563,14 @@ classdef TestMatran < matlab.unittest.TestCase
             ext  = arrayfun(@(ii) files{ii}(ind_ext(ii) : end), ...
                 1 : numel(ind_sep), 'Unif', false);
         end
+        function instantiableClasses = getAllInstatiableClasses
+            %getAllInstantiableClasses Returns the name of all classes in
+            %the Matran package that can be instantitated. i.e. classes
+            %that are not abstract.
+            
+            allClasses          = TestMatran.getAllClasses;
+            instantiableClasses = TestMatran.screenAbstractClass(allClasses);
+        end
         function allClasses  = getAllClasses
             %getAllClasses Returns a list of all classes in the Matran
             %package.
@@ -524,9 +579,9 @@ classdef TestMatran < matlab.unittest.TestCase
             %   +bulk
             %   +result
             
-            resultClasses = {'mni.result.Nodal'};
-            bulkClasses   = TestMatran.getBulkClasses;
-            allClasses    = [bulkClasses, resultClasses];
+            package_list = {'+result', '+bulk', '+mixin'};            
+            allClasses = cellfun(@(x) TestMatran.getPackageClass(x), package_list, 'Unif', false);
+            allClasses = horzcat(allClasses{:});
         end
         function bulkClasses = getBulkClasses
             %getBulkClasses Returns a list of all bulk data classes in the
@@ -540,8 +595,6 @@ classdef TestMatran < matlab.unittest.TestCase
             %of the 'tbx/matran/+mni' folder.
             %
             % TODO - Recurse through subfolders
-            % TODO - Option to strip Abstract classes by examining the meta
-            %        data
             
             %Get location of the +bulk folder
             sandbox_loc = fileparts(fileparts(mfilename('fullpath')));
@@ -562,6 +615,10 @@ classdef TestMatran < matlab.unittest.TestCase
             
             assert(~isempty(classList), sprintf(['No classes found ', ...
                 'in the %s package folder. Check the codebase.'], prefix));
+        end
+        function instantiableClasses = screenAbstractClass(classList)
+            mc = cellfun(@(x) meta.class.fromName(x), classList);
+            instantiableClasses = classList(~[mc.Abstract]);
         end
     end
     
