@@ -9,6 +9,12 @@ classdef Collector < mni.mixin.Entity & mni.mixin.Dynamicable
     properties (SetAccess = private, Hidden = true)
         ItemNames = {};
     end
+    properties (Dependent, Hidden = true)
+        %Cellstr of class names for each object in the collection
+        ItemClass
+        %Cellstr of unique class names across all objects in the collection
+        UniqueClass
+    end
     
     %Controlling the contents of the collection
     properties (SetAccess = protected)
@@ -20,7 +26,16 @@ classdef Collector < mni.mixin.Entity & mni.mixin.Dynamicable
         AssignMethod          = @horzcat;
     end
     
-    methods % adding/removing items from the collection
+    methods % set / get
+        function val = get.ItemClass(obj)   %get.ItemClass
+            val = cellfun(@(x) class(obj.(x)),obj.ItemNames, 'Unif', false);
+        end
+        function val = get.UniqueClass(obj) %get.UniqueClass
+            val = unique(obj.ItemClass, 'stable');
+        end
+    end
+    
+    methods (Sealed) % adding/removing items from the collection
         function addItem(obj, item)
             %addItem Adds an item to the collection.
             %
