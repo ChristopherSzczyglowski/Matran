@@ -36,12 +36,8 @@ classdef Entity < matlab.mixin.SetGet & matlab.mixin.Heterogeneous
             end
         end
         function val = get.Type(obj)
-            cls = class(obj);
-            n   = max(strfind(cls, '.'));
-            if isempty(n)
-                n = 0;
-            end
-            val = cls(n + 1 : end);
+            typ = getEntityType(obj);
+            val = typ{1};            
         end
     end
     
@@ -52,6 +48,32 @@ classdef Entity < matlab.mixin.SetGet & matlab.mixin.Heterogeneous
         function varargout = get(obj,varargin)
             [varargout{1:nargout}] = get@matlab.mixin.SetGet(obj,varargin{:});
         end        
+    end
+    
+    methods (Sealed) % getEntityType
+        function type = getEntityType(obj, cls)
+            %getEntityType Returns the object type.
+            %
+            % Detailed Description:
+            %   - The object Type is simply the filename of the file which
+            %     contains the class definition. 
+            %   - It can be found by interrogating the class name and
+            %     removing all prefixes/pacakge lists.
+            
+            if nargin < 2
+                cls = {class(obj)};
+            end            
+            assert(iscellstr(cls), ['Expected the class names to be ', ...
+                'a cell-array of characters.']);
+            
+            index = cellfun(@(x) max(strfind(x, '.')), cls, 'Unif', false);
+            index(cellfun(@isempty, index)) = {0};
+            index = horzcat(index{:}) + 1;
+            
+            type = arrayfun(@(ii) cls{ii}(index(ii) : end), ...
+                1 : numel(cls), 'Unif', false);           
+            
+        end
     end
     
 end

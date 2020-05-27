@@ -14,6 +14,10 @@ classdef Collector < mni.mixin.Entity & mni.mixin.Dynamicable
         ItemClass
         %Cellstr of unique class names across all objects in the collection
         UniqueClass
+        %Cellstr of item types for each object in the collection
+        ItemType
+        %Cellstr of unique types across all objects in the collection
+        UniqueType
     end
     
     %Controlling the contents of the collection
@@ -28,14 +32,20 @@ classdef Collector < mni.mixin.Entity & mni.mixin.Dynamicable
     
     methods % set / get
         function val = get.ItemClass(obj)   %get.ItemClass
-            val = cellfun(@(x) class(obj.(x)),obj.ItemNames, 'Unif', false);
+            val = cellfun(@(x) class(obj.(x)), obj.ItemNames, 'Unif', false);
         end
         function val = get.UniqueClass(obj) %get.UniqueClass
             val = unique(obj.ItemClass, 'stable');
         end
+        function val = get.ItemType(obj)    %get.ItemType
+            val = getEntityType(obj, obj.ItemClass);
+        end
+        function val = get.UniqueType(obj)  %get.UniqueType
+            val = getEntityType(obj, obj.UniqueClass);
+        end
     end
     
-    methods (Sealed) % adding/removing items from the collection
+    methods (Sealed) % adding/removing/retrieving items from the collection
         function addItem(obj, item)
             %addItem Adds an item to the collection.
             %
@@ -83,6 +93,67 @@ classdef Collector < mni.mixin.Entity & mni.mixin.Dynamicable
                 obj.ItemNames = [obj.ItemNames, {nam}];
             end
             
+        end
+        function item = getItem(obj, tok)
+            %getItem Retrieves the handle to an item in the collection. 
+            %
+            % Detailed Description: 
+            %   - Multiple items can be retrieved by passing in a cell-str
+            %     of tokens. 
+            %   - Items can be retrieved based on Class, Name, Type or a 
+            %     combination of the three. 
+            %   - If none of the tokens match then an empty array is 
+            %     returned. 
+            %
+            % TODO - Consider whether we want to only select the unique
+            % tokens or allow the user to search for duplicates.
+            
+            item = [];
+            if ~iscell(tok)
+                tok = {tok};
+            end
+            if ~iscellstr(tok)
+                return
+            end
+            
+            item = cell(size(tok));
+            
+            names       = obj.ItemNames;
+            [item, tok] = getItemFromCollection(obj, names, names, tok, item);
+            if all(cellfun(@isempty, tok))
+                return
+            end
+            
+            classes     = obj.ItemClass;
+            [item, tok] = getItemFromCollection(obj, names, classes, tok, item);
+            if all(cellfun(@isempty, tok))
+                return
+            end
+            
+            types       = obj.ItemType;
+            [item, tok] = getItemFromCollection(obj, names, types, tok, item);
+            
+            if ~all(cellfun(@isempty, tok))
+                item = [];
+            end
+            
+            function [item, tok] = getItemFromCollection(obj, dyn_prop_names, list, tok, item)
+                %getItemFromCollection Retrieves an item from the
+                %collection using the index 'tok' which can be found in the
+                %lookup table 'list'.
+                %
+                % N.B. The dynamic property names are used to actually
+                % retrive the data. The mapping between 'dyn_prop_names'
+                % and 'list' is direct.
+                
+                [idx_a, ia] = ismember(list, tok);
+                idx_b       = ismember(tok, list(idx_a));
+                item(idx_b) = get(obj, dyn_prop_names(idx_a));
+                tok(idx_b)  = {''};
+                %ind       = ia(idx_a);
+                %item(ind) = get(obj, names(idx_a));
+                %tok(ind)  = [];                
+            end
         end
         function item = removeItem(obj, item)
             %removeItem 

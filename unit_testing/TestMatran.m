@@ -14,10 +14,17 @@ classdef TestMatran < matlab.unittest.TestCase
     %           importBulkAutoH5File
     %           importBdfAndH5ThenCompare
     %       + Checking codebase
-    %           constructBulk
-    %           drawEmptyBulk
+    %           obj_construct
+    %           obj_display
+    %           obj_get_props
+    %           bulk_construct
+    %           bulk_draw_empty
     %       + Managing collections
     %           collector_add_item
+    %           collector_get_item_by_name
+    %           collector_get_item_by_class
+    %           collector_get_item_by_type
+    %           collector_get_item_by_mix
     %       + Dynamic objects
     %           dynamicable_isequal_self_empty
     %           dynamicable_isequal_two_empty
@@ -357,7 +364,7 @@ classdef TestMatran < matlab.unittest.TestCase
     
     %Collector
     methods (Test, ParameterCombination = 'sequential')
-        function collector_add_item(obj, CollectorClass, ClassNameFunc)
+        function Collection = collector_add_item(obj, CollectorClass, ClassNameFunc)
             %collector_add_item Attempts to add each type of object
             %returned by 'ClassNameFunc' to the mni.mixin.Collector object
             %given by 'CollectorClass'.
@@ -371,6 +378,71 @@ classdef TestMatran < matlab.unittest.TestCase
                 addItem(Collection, Item);
             end
             
+        end
+        function collector_get_item_by_name(obj, CollectorClass, ClassNameFunc)
+            %collector_get_item_by_name Attempts to retrieve each item
+            %returned by 'ClassNameFunc' from the mni.mixin.Collector
+            %object given by 'CollectorClass' using the item NAME as the
+            %search token.
+            
+            Collection = collector_add_item(obj, CollectorClass, ClassNameFunc);
+            
+            toks = Collection.ItemNames;
+            for ii = 1 : numel(toks)
+                getItem(Collection, toks{ii}); 
+                getItem(Collection, repmat(toks(ii), [1, 3]));
+            end
+        end
+        function collector_get_item_by_class(obj, CollectorClass, ClassNameFunc)
+            %collector_get_item_by_class Attempts to retrieve each item
+            %returned by 'ClassNameFunc' from the mni.mixin.Collector
+            %object given by 'CollectorClass' using the item CLASS as the
+            %search token.
+            
+            Collection = collector_add_item(obj, CollectorClass, ClassNameFunc);
+            
+            toks = Collection.UniqueClass;
+            for ii = 1 : numel(toks)
+                getItem(Collection, toks{ii}); 
+                getItem(Collection, repmat(toks(ii), [1, 3]));
+            end
+        end
+        function collector_get_item_by_type(obj, CollectorClass, ClassNameFunc)
+            %collector_get_item_by_type Attempts to retrieve each item
+            %returned by 'ClassNameFunc' from the mni.mixin.Collector
+            %object given by 'CollectorClass' using the item TYPE as the
+            %search token.
+            
+            Collection = collector_add_item(obj, CollectorClass, ClassNameFunc);
+            
+            toks = Collection.UniqueType;
+            for ii = 1 : numel(toks)
+                getItem(Collection, toks{ii}); 
+                getItem(Collection, repmat(toks(ii), [1, 3]));
+            end
+        end
+        function collector_get_item_by_mix(obj, CollectorClass, ClassNameFunc)
+            %collector_get_item_by_mix Attempts to retrieve each item
+            %returned by 'ClassNameFunc' from the mni.mixin.Collector
+            %object given by 'CollectorClass' using a mix of NAME, CLASS
+            %and TYPE search tokens. 
+            %
+            % Uses the item names, class and type to generate a random
+            % combination of tokens to search the collection for.
+            
+            Collection = collector_add_item(obj, CollectorClass, ClassNameFunc);
+            
+            nam = Collection.ItemNames;
+            cls = Collection.UniqueClass;
+            typ = Collection.UniqueType;
+            
+            for ii = 1 : numel(nam)
+                toks = [ ...
+                    nam(ceil(rand() * numel(nam))), ...
+                    cls(ceil(rand() * numel(cls))), ...
+                    typ(ceil(rand() * numel(typ)))];
+                getItem(Collection, toks); 
+            end
         end
     end
     
@@ -551,6 +623,7 @@ classdef TestMatran < matlab.unittest.TestCase
         function [path, nam, ext] = getFileParts(files)
             %getFileParts Returns a cell-array of file paths, names and
             %extensions from a cell-array of fully-qualified files.
+            
             ind_sep = cellfun(@(x) strfind(x, filesep), files, 'Unif', false);
             ind_ext = cellfun(@(x) strfind(x, '.')    , files, 'Unif', false);
             ind_sep(cellfun(@isempty, ind_sep)) = {0};
