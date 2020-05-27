@@ -86,7 +86,7 @@ else
 end
 if bExtractResults && checkH5Groups(filename, 'RESULT') %Import the results
      [ResultSet, UnknownResults] = extractH5Results(filename, logfcn);
-else
+elseif bExtractResults
     warning(['The h5 file ''%s'' did not contain any results ', ...
         'data. Make sure MDLPARAM HDF5 is set to 0, 1, 2 or 3 ', ...
         'in the run file.'], filename);
