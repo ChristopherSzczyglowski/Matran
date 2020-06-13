@@ -94,7 +94,7 @@ classdef Collector < mni.mixin.Entity & mni.mixin.Dynamicable
             end
             
         end
-        function item = getItem(obj, tok)
+        function item = getItem(obj, tok, bReturnObjectArray)
             %getItem Retrieves the handle to an item in the collection. 
             %
             % Detailed Description: 
@@ -109,6 +109,12 @@ classdef Collector < mni.mixin.Entity & mni.mixin.Dynamicable
             % tokens or allow the user to search for duplicates.
             
             item = [];
+            if nargin < 2
+                return
+            end
+            if nargin < 3
+                bReturnObjectArray = false;
+            end
             if ~iscell(tok)
                 tok = {tok};
             end
@@ -121,22 +127,31 @@ classdef Collector < mni.mixin.Entity & mni.mixin.Dynamicable
             names       = obj.ItemNames;
             [item, tok] = getItemFromCollection(obj, names, names, tok, item);
             if all(cellfun(@isempty, tok))
+                if bReturnObjectArray
+                    item = horzcat(item{:});
+                end
                 return
             end
             
             classes     = obj.ItemClass;
             [item, tok] = getItemFromCollection(obj, names, classes, tok, item);
             if all(cellfun(@isempty, tok))
+                if bReturnObjectArray
+                    item = horzcat(item{:});
+                end
                 return
             end
             
             types       = obj.ItemType;
             [item, tok] = getItemFromCollection(obj, names, types, tok, item);
             
+            if bReturnObjectArray && all(cellfun(@isempty, tok))
+                item = horzcat(item{:});
+            end
             if ~all(cellfun(@isempty, tok))
                 item = [];
             end
-            
+                        
             function [item, tok] = getItemFromCollection(obj, dyn_prop_names, list, tok, item)
                 %getItemFromCollection Retrieves an item from the
                 %collection using the index 'tok' which can be found in the
