@@ -19,7 +19,7 @@ sandbox_loc = fileparts(loc);
 
 %Development tools
 rmpath(fullfile(sandbox_loc, 'dev_tools'));
-rmpath(genpath(fullfile(sandbox_loc, 'unit_testing')));
+rmpath(fullfile(sandbox_loc, 'unit_testing'));
 
 %Matran code
 rmpath(fullfile(sandbox_loc, 'tbx', 'matran'));
