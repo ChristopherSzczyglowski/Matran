@@ -4,3 +4,7 @@
 *.log
 
 models/auto_generated_h5_data/
+
+unit_testing/models/uob_HARW/
+
+unit_testing/models/uob_HARW_wide_field/
