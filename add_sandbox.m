@@ -20,9 +20,9 @@
 loc = mfilename('fullpath');
 sandbox_loc = fileparts(loc);
 
-%Add the development tools
+%Development tools
 addpath(fullfile(sandbox_loc, 'dev_tools'));
 addpath(fullfile(sandbox_loc, 'unit_testing'));
 
-%Add the Matran code
+%Matran code
 addpath(fullfile(sandbox_loc, 'tbx', 'matran'));
