@@ -171,8 +171,9 @@ classdef Collector < mni.mixin.Entity & mni.mixin.Dynamicable
             end
         end
         function item = removeItem(obj, item)
-            %removeItem 
+            %removeItem TODO
         end
     end
+    
 end
 

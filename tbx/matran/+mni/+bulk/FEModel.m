@@ -5,12 +5,20 @@ classdef FEModel < mni.mixin.Collector
     % Detailed Description:
     %   -
     %
+    % See also: mni.mixin.Collector
+    %
     % TODO - Add a method for tidying up the PBEAM/PBAR entries and
     % defining default values.
     
     properties (Dependent)
         %Names of the bulk data properties in the collection
         BulkDataNames 
+    end
+    
+    properties (SetAccess = private)
+        %Cell array of transformation matrices from local-to-basic
+        %coordinate system and associated CoordSys ID numbers
+        TransformationMatrices
     end
     
     methods % set / get
@@ -109,6 +117,22 @@ classdef FEModel < mni.mixin.Collector
                     obj.(bulkNames{iB}).([Con(iC).DynProp, 'Index']) = index;
                 end
             end
+            
+        end
+        function rMat = makeCoordSys(obj)
+            %makeCoordSys Constructs the coordinate system transformation
+            %matrices for all non-basic coordinate systems in the FEModel.
+            
+            rMat = [];
+            if ~any(ismember(obj.UniqueClass, 'mni.bulk.CoordSystem'))
+                return
+            end
+            
+            CoordSys = getItem(obj, 'mni.bulk.CoordSystem', true);
+            assert(numel(CoordSys) == 1 && strcmp(CoordSys.Name, 'CORD2R'), ...
+                'Update code for new coordinate sytems.');
+            
+            rmat = getRotationMatrix(CoordSys);
             
         end
         function summary = summarise(obj)
@@ -241,7 +265,7 @@ classdef FEModel < mni.mixin.Collector
             
             if nargin < 2 || isempty(hAx)
                 hF  = figure('Name', 'Finite Element Model');
-                hAx = axes('Parent',hF, 'NextPlot', 'add', 'Box', 'on');
+                hAx = axes('Parent', hF, 'NextPlot', 'add', 'Box', 'on');
                 xlabel(hAx, 'X');
                 ylabel(hAx, 'Y');
                 zlabel(hAx, 'Z');

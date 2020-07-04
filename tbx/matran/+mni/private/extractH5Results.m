@@ -1,7 +1,7 @@
 function [Results, UnknownResults] = extractH5Results(filename, logfcn)
 %extractH5Results
 
-Results        = mni.mixin.Collector;
+Results        = mni.result.ResultSet;
 UnknownResults = [];
 ResultMask     = defineResultMask;
 

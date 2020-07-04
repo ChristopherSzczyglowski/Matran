@@ -537,6 +537,40 @@ classdef TestMatran < matlab.unittest.TestCase
             %                 fclose(fid);
             %             end
         end
+        function importH5ThenCheckRotMat(obj, AutoH5Files)
+            %importH5ThenCheckRotMat Imports the FEM from the MSC.Nastran 
+            %HDF5 file and checks that the rotation matrix calculated by
+            %the mni.bulk.CoordSys object matches the rotation matrix in
+            %the h5 file.
+            
+            tol = 1e-6; %tolerance for checking equality
+            
+            FEM = importModelThenDraw(obj, AutoH5Files);
+            
+            %Rotation matrix calculated by Matran
+            CoordSys = getItem(FEM, 'mni.bulk.CoordSystem', true);
+            if isempty(CoordSys)
+                return
+            end
+            rmat = getRotationMatrix(CoordSys);
+            rmat = reshape(rmat, [9, size(rmat, 3)]);
+            
+            %Rotation matrix returned by the .h5 file
+            %   - Assume that each rotation matrix has 12 elements. If not
+            %   then we need to use the index data (see commented out code)
+            %index = h5read(AutoH5Files, '/NASTRAN/INPUT/COORDINATE_SYSTEM/TRANSFORMATION/IDENTITY');
+            data  = h5read(AutoH5Files, '/NASTRAN/INPUT/COORDINATE_SYSTEM/TRANSFORMATION/RDATA');
+            %lb = index.RINDEX;
+            %ub = lb + 11;   %each rotation matrix has 12 elements (translation & rotation)
+            %rmat_h5 = arrayfun(@(ii) data.DATA(lb(ii) : ub(ii)), 1 : numel(lb), 'Unif', false);
+            nElem = 12;
+            rtmat_h5 = reshape(data.DATA, [nElem, numel(data.DATA) / nElem]);
+            rmat_h5  = rtmat_h5(4 : end, :);
+            clear data
+            assert(all(all((rmat - rmat_h5) < tol)), ['Matran and ', ...
+                'Nastran rotation matrices not equal.']);
+
+        end
     end
     methods (TestMethodTeardown)
         function closeFigures(obj)

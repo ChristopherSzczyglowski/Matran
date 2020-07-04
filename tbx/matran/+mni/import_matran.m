@@ -43,10 +43,14 @@ function varargout = import_matran(filename, varargin)
 %	- Initial function:
 %
 % <end_of_pre_formatted_H1>
+%
+% TODO - Add .pch output reading
+% TODO - Add .f06 output reading
+% TODO - Add .op2 output reading
 
-varargout = {};
+varargout = {[]};
 
-%type, descriptor, extensions, import function
+%descriptor, extensions, import function
 prmpt = 'Select a file to import';
 file_map = { ...
     {'Nastran bulk data files', 'Nastran h5 files'}, ...
@@ -65,27 +69,26 @@ end
 %Import the data
 [MatranData, Meta] = import_fcn(filename, log_fcn, args{:});
 
-%Do some additional actions based on the type of imported data
-for ii = 1 : numel(MatranData)
-    switch class(MatranData(ii))
-        case 'mni.bulk.FEModel'
-            %Print summary
-            printSummary(MatranData(ii), 'LogFcn', log_fcn, 'RootFile', filename);
-            if isempty(Meta.SkippedBulk)
-                log_fcn('All bulk data entries were successfully extracted!');
-            else
-                log_fcn(sprintf(['The following cards have not been extracted ', ...
-                    'from the file ''%s'':\n\n\t%-s\n'], filename, ...
-                    sprintf('%s\n\t', Meta.SkippedBulk{:})));
-            end
-            %Make indices between bulk data objects
-            makeIndices(MatranData(ii));
-            %TODO - Construct node coordinates and transformation matrices, etc.
-        case 'mni.result.ResultSet'
-            
-        otherwise
-            
+%Do post-import actions
+idxModel = arrayfun(@(o) isa(o, 'mni.bulk.FEModel'), MatranData);
+if any(idxModel)
+    FEModel = MatranData(idxModel);
+    %Print summary
+    printSummary(FEModel, 'LogFcn', log_fcn, 'RootFile', filename);
+    if isempty(Meta.SkippedBulk)
+        log_fcn('All bulk data entries were successfully extracted!');
+    else
+        log_fcn(sprintf(['The following cards have not been extracted ', ...
+            'from the file ''%s'':\n\n\t%-s\n'], filename, ...
+            sprintf('%s\n\t', Meta.SkippedBulk{:})));
     end
+    %Make indices between bulk data objects
+    makeIndices(FEModel);
+end
+idxRes = arrayfun(@(o) isa(o, 'mni.result.ResultSet'), MatranData);
+if any(idxRes) && any(idxModel)
+    Results = MatranData(idxRes);
+    Results.processResultsData(FEModel);
 end
 
 varargout{1} = MatranData;
