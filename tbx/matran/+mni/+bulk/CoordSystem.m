@@ -58,14 +58,22 @@ classdef CoordSystem < mni.bulk.BulkData
             
             switch obj.CardName
                 case 'CORD2R'
+                    
+                    assert(~any(obj.RID), ['Update code to handle ', ...
+                        'coordinate systems in the non-basic ', ...
+                        'coordinate system.']);
+                        
                     a = [obj.A];
                     b = [obj.B];
                     c = [obj.C];
                     
                     eZ = b - a;
                     AC = c - a;                    
-                    eY = cross(eZ, AC);
+                    eY = -cross(eZ, AC);
+                    %eY = cross(eZ, c);
                     eX = cross(eY, eZ);
+                    %eY = cross(AC, eZ);
+                    %eX = cross(eY, eZ);
                     
                     %Ensure unit vectors
                     eX = eX ./ repmat(sqrt(sum(eX.^2, 1)), [3, 1]);

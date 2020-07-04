@@ -1,4 +1,4 @@
-classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mni.mixin.Dynamicable
+classdef BulkData < mni.mixin.Entity  & mni.mixin.Dynamicable
     %BulkData Base-class of all bulk data objects.
     %
     % TODO: Think about how to handle bulk data types where a particular
@@ -23,7 +23,7 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mni.mixin
     
     %FE data
     properties (SetAccess = private)
-        %Name of the MSC.Nastran bulk data entry
+        %Name of the MSC.Nastran bulk data entry - mask for 'Name' property
         CardName
         %Properties related to the bulk data entry
         BulkDataProps = struct( ...
@@ -79,6 +79,12 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mni.mixin
             %set.ID Set method for the property 'ID'.
             validateID(obj, val, 'ID');
             obj.ID = val;
+        end
+        function set.CardName(obj, val)                 %set.CardName
+            obj.Name = val;
+        end
+        function val = get.CardName(obj)                %get.CardName
+            val = obj.Name;
         end
         function val = get.ValidBulkNames(obj)          %get.ValidBulkNames
             val = {obj.BulkDataProps.BulkName};
@@ -420,10 +426,10 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mni.mixin
         end
     end
     methods 
-        function combine(obj)
+        function varargout = combine(obj)
             %combine Combines the bulk data from an array of
             %'bulk.BulkData' objects into a single object.
-            
+                        
             if numel(obj) == 1
                 return
             end
@@ -434,6 +440,7 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mni.mixin
                 1 : numel(prpNames), 'Unif', false);
             set(obj(1), prpNames, prpVal);
             
+            varargout = num2cell(obj);
         end
     end
     
@@ -936,15 +943,6 @@ classdef BulkData < matlab.mixin.SetGet & matlab.mixin.Heterogeneous & mni.mixin
             assert(all(cellfun(@numel, val) < 9), ['Each element of the ', ...
                 'property ''%s'' must be 8 characters or less.'], prpName);
         end
-    end
-    
-    methods (Sealed) % helper functions for heterogeneous arrays 
-        function varargout = set(obj,varargin)
-            [varargout{1:nargout}] = set@matlab.mixin.SetGet(obj,varargin{:});
-        end        
-        function varargout = get(obj,varargin)
-            [varargout{1:nargout}] = get@matlab.mixin.SetGet(obj,varargin{:});
-        end        
     end
     
     methods % visualisation

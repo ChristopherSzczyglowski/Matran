@@ -9,12 +9,27 @@ classdef TestMatran < matlab.unittest.TestCase
     % Detailed Description:
     %	- Available tests:
     %       + Importing models
-    %           importFromTPLTextFile
-    %           importFromTextFile
-    %           importFromAutoH5File
+    %           importBulkTPLTextFile
+    %           importBulkTextFile
+    %           importBulkAutoH5File
+    %           importBdfAndH5ThenCompare
     %       + Checking codebase
-    %           constructBulk
-    %           drawEmptyBulk
+    %           obj_construct
+    %           obj_display
+    %           obj_get_props
+    %           bulk_construct
+    %           bulk_draw_empty
+    %       + Managing collections
+    %           collector_add_item
+    %           collector_get_item_by_name
+    %           collector_get_item_by_class
+    %           collector_get_item_by_type
+    %           collector_get_item_by_mix
+    %       + Dynamic objects
+    %           dynamicable_isequal_self_empty
+    %           dynamicable_isequal_two_empty
+    %           dynamicable_isequal_isequal_bulk
+    %
     %   - To run the test 'ImportFromTPLTextFile' the user must set the
     %     preference 'PathToNastranTPL' on their local user profile. This
     %     can  be done via:
@@ -40,10 +55,15 @@ classdef TestMatran < matlab.unittest.TestCase
     %	- Initial function:
     %
     % <end_of_pre_formatted_H1>
-    % 
+    %
     % TODO - Add a test which runs every public method on a new object.
     % Should be no errors!
     % TODO - Get log file working
+    % TODO - Try to attach empty results to a FEM and do methods.
+    % TODO - Try to attach full results to empty FEM and do methods.
+    % TODO - Test different h5 ImportMode options for every .h5 file.
+    % TODO - Extract results and attach to a model
+    % TODO - Extract results, attach to model and plot
     
     %Importing
     properties (TestParameter) % model files
@@ -54,32 +74,37 @@ classdef TestMatran < matlab.unittest.TestCase
             '\doc\dynamics\bd03fix.dat' , ... %test fixture
             'aero\ha75b.dat'            , ... %BAH jet transport PK flutter analysis
             'aero\ha76b.dat'            , ... %BAH jet transport enforced aileron displacement
-            'aero\ha76c.dat'            , ... %BAH jet transport random gust 
+            'aero\ha76c.dat'            , ... %BAH jet transport random gust
             'aero\ha75f.dat'            , ... %NASA TN D-1824 PK flutter analysis
-            'aero\ha145z.dat'}; %NASA TN D-1824 
+            'aero\ha145z.dat'}; %NASA TN D-1824
         %Custom files which will be shipped with the repo
         TextImportFiles = { ...
             'uob_HARW\wing_model_R.bdf', ...                %HARW wing
-            'uob_HARW_wide_field\sol_103_pod_fwd_pc.dat'};  %HARW wing (wide-field)       
+            'uob_HARW_wide_field\sol_103_pod_fwd_pc.dat'};  %HARW wing (wide-field)
         %Auto-generated .h5 files from the 'models' folder
         AutoH5Files = getH5files;
-    end    
+    end
     properties (TestParameter) % import parameters
         %Function handle to logging function
         %LogFcn  = {@logger}; %, 'diary.txt'};
-        %Toggle printing output 
+        %Toggle printing output
         Verbose = {true, false};
     end
     properties (SetAccess = private)
         TestFigure
         UnknownBulk = {};
     end
-    
     properties (Dependent)
         %Path to the Nastran TPL. User dependent via setpref/getpref
-        PathToNastranTPL 
+        PathToNastranTPL
         %Unison of 'TPLTextImportFiles' and 'TextImportFiles'
         AllTextImportFiles
+    end
+    
+    %Collectors
+    properties (TestParameter)
+        CollectorClass = {'mni.mixin.Collector'     , 'mni.bulk.FEModel'};
+        ClassNameFunc  = {@TestMatran.getAllClasses, @TestMatran.getBulkClasses}
     end
     
     methods % set / get
@@ -109,15 +134,11 @@ classdef TestMatran < matlab.unittest.TestCase
     
     methods % construction
         function obj = TestMatran(varargin)
-                        
-            %Make sure 'models' folder is accessible
-            %TODO - Add this as a test fixture
-            addpath(genpath(fullfile(fileparts(mfilename('fullpath')), 'models')));
             
             p = inputParser;
             addParameter(p, 'CheckBulkCoverage', false, @(x)validateattributes(x, {'logical'}, {'scalar'}));
             parse(p, varargin{:});
-                        
+            
             if p.Results.CheckBulkCoverage
                 checkBulkCoverage(obj);
             end
@@ -205,7 +226,53 @@ classdef TestMatran < matlab.unittest.TestCase
     
     %% Tests
     
-    %Test bulk classes
+    %Generic objects
+    methods (Test)
+        function obj_construct(obj)
+           %obj_construct Checks that we can construct one of every type of
+           %object in the package.
+                      
+           instantiableClasses = obj.getAllInstatiableClasses;           
+           for ii = 1 : numel(instantiableClasses)
+               func = str2func(instantiableClasses{ii});
+               func();               
+           end
+           
+        end
+        function obj_display(obj)
+            %obj_display Checks that we can display each object in the
+            %collection, even when 
+            %
+            % This test will check for any non-hidden, dependent properties
+            % that don't provide a default value when the object is empty.
+            
+            instantiableClasses = obj.getAllInstatiableClasses;
+            for ii = 1 : numel(instantiableClasses)
+                func      = str2func(instantiableClasses{ii});
+                MatranObj = func();
+                disp(MatranObj);
+            end
+        end
+        function obj_get_props(obj)
+            %obj_get_props Checks that each property can be accessed from
+            %an empty state.
+            %
+            % This test will check for any hidden, dependent properties 
+            % that don't provide a default value when the object is empty. 
+            
+            instantiableClasses = obj.getAllInstatiableClasses;
+            for ii = 1 : numel(instantiableClasses)
+                func      = str2func(instantiableClasses{ii});
+                MatranObj = func();
+                prps = properties(MatranObj);
+                for jj = 1 : numel(prps)
+                    MatranObj.(prps{jj});
+                end
+            end
+        end
+    end
+    
+    %Bulk data
     methods (Test)
         function bulk_construct(obj)
             %test_bulk_construct Checks that each bulk data object can be
@@ -233,7 +300,7 @@ classdef TestMatran < matlab.unittest.TestCase
                 end
             end
             
-        end   
+        end
         function bulk_draw_empty(obj)
             %bulk_draw_empty Checks that each bulk data object can be
             %drawn from a basic constructor call.
@@ -258,46 +325,21 @@ classdef TestMatran < matlab.unittest.TestCase
             end
         end
     end
-    methods (Static)
-        function bulkClasses = getBulkClasses
-            %getBulkClasses Returns a list of all bulk data classes in the
-            %mni.bulk package.
-            
-            %Get location of the +bulk folder
-            sandbox_loc = fileparts(fileparts(mfilename('fullpath')));
-            bulk_loc    = fullfile(sandbox_loc, 'tbx', 'matran', '+mni', '+bulk');            
-            
-            %Find all classes in the +bulk package folder
-            contents = dir(bulk_loc);
-            
-            fNames = cell(1, numel(contents));
-            for ii = 1 : numel(fNames)
-                [~, fNames{ii}, ~] = fileparts(contents(ii).name);
-            end
-            fNames = strcat('mni.bulk.', fNames);
-            val = cellfun(@(x) exist(x, 'class'), fNames);
-            bulkClasses = fNames(val ~= 0);
-            
-            assert(~isempty(bulkClasses), ['No classes found in the ', ...
-                'mni.bulk package folder. Check the codebase.']);
-            
-        end
-    end
     
-    %Test mixin
+    %Dynamicable
     methods (Test)
         function dynamicable_isequal_self_empty(obj)
             
             %Check itself against itself
             DynA = mni.mixin.Dynamicable;
-            assert(isequal(DynA, DynA), '''isequal'' failed for same object');      
+            assert(isequal(DynA, DynA), '''isequal'' failed for same object');
         end
         function dynamicable_isequal_two_empty(obj)
             
             %Check itself against another empty
             DynA = mni.mixin.Dynamicable;
-            DynB = mni.mixin.Dynamicable;            
-            assert(isequal(DynA, DynB), '''isequal'' failed for two empties');            
+            DynB = mni.mixin.Dynamicable;
+            assert(isequal(DynA, DynB), '''isequal'' failed for two empties');
         end
         function dynamicable_isequal_bulk(obj)
             
@@ -305,20 +347,104 @@ classdef TestMatran < matlab.unittest.TestCase
             bulkClasses = obj.getBulkClasses;
             
             %Make an instance of each object and check equality
-            for ii = 1 : numel(bulkClasses)                
-                func = str2func(bulkClasses{ii});                
+            for ii = 1 : numel(bulkClasses)
+                func = str2func(bulkClasses{ii});
                 BulkA = func();
                 BulkB = func();
                 assert(isequal(BulkA, BulkB), sprintf(['''isequal'' ', ...
                     'failed for two empty bulk objects of class %s'] , ...
-                    bulkClasses{ii})); 
+                    bulkClasses{ii}));
             end
         end
     end
-
+    
+    %Collector
+    methods (Test, ParameterCombination = 'sequential')
+        function Collection = collector_add_item(obj, CollectorClass, ClassNameFunc)
+            %collector_add_item Attempts to add each type of object
+            %returned by 'ClassNameFunc' to the mni.mixin.Collector object
+            %given by 'CollectorClass'.
+            
+            Collection  = eval(CollectorClass);
+            itemClasses = ClassNameFunc();
+            itemClasses = obj.screenAbstractClass(itemClasses);
+            for ii = 1 : numel(itemClasses)
+                func = str2func(itemClasses{ii});
+                Item = func();
+                addItem(Collection, Item);
+            end
+            
+        end
+        function collector_get_item_by_name(obj, CollectorClass, ClassNameFunc)
+            %collector_get_item_by_name Attempts to retrieve each item
+            %returned by 'ClassNameFunc' from the mni.mixin.Collector
+            %object given by 'CollectorClass' using the item NAME as the
+            %search token.
+            
+            Collection = collector_add_item(obj, CollectorClass, ClassNameFunc);
+            
+            toks = Collection.ItemNames;
+            for ii = 1 : numel(toks)
+                getItem(Collection, toks{ii}); 
+                getItem(Collection, repmat(toks(ii), [1, 3]));
+            end
+        end
+        function collector_get_item_by_class(obj, CollectorClass, ClassNameFunc)
+            %collector_get_item_by_class Attempts to retrieve each item
+            %returned by 'ClassNameFunc' from the mni.mixin.Collector
+            %object given by 'CollectorClass' using the item CLASS as the
+            %search token.
+            
+            Collection = collector_add_item(obj, CollectorClass, ClassNameFunc);
+            
+            toks = Collection.UniqueClass;
+            for ii = 1 : numel(toks)
+                getItem(Collection, toks{ii}); 
+                getItem(Collection, repmat(toks(ii), [1, 3]));
+            end
+        end
+        function collector_get_item_by_type(obj, CollectorClass, ClassNameFunc)
+            %collector_get_item_by_type Attempts to retrieve each item
+            %returned by 'ClassNameFunc' from the mni.mixin.Collector
+            %object given by 'CollectorClass' using the item TYPE as the
+            %search token.
+            
+            Collection = collector_add_item(obj, CollectorClass, ClassNameFunc);
+            
+            toks = Collection.UniqueType;
+            for ii = 1 : numel(toks)
+                getItem(Collection, toks{ii}); 
+                getItem(Collection, repmat(toks(ii), [1, 3]));
+            end
+        end
+        function collector_get_item_by_mix(obj, CollectorClass, ClassNameFunc)
+            %collector_get_item_by_mix Attempts to retrieve each item
+            %returned by 'ClassNameFunc' from the mni.mixin.Collector
+            %object given by 'CollectorClass' using a mix of NAME, CLASS
+            %and TYPE search tokens. 
+            %
+            % Uses the item names, class and type to generate a random
+            % combination of tokens to search the collection for.
+            
+            Collection = collector_add_item(obj, CollectorClass, ClassNameFunc);
+            
+            nam = Collection.ItemNames;
+            cls = Collection.UniqueClass;
+            typ = Collection.UniqueType;
+            
+            for ii = 1 : numel(nam)
+                toks = [ ...
+                    nam(ceil(rand() * numel(nam))), ...
+                    cls(ceil(rand() * numel(cls))), ...
+                    typ(ceil(rand() * numel(typ)))];
+                getItem(Collection, toks); 
+            end
+        end
+    end
+    
     %Importing
     methods (Test, ParameterCombination = 'exhaustive')
-        function importFromTPLTextFile(obj, TPLTextImportFiles)
+        function importBulkTPLTextFile(obj, TPLTextImportFiles)
             %importFRomTPLTextFile Attempts to import a FE model from a
             %text file contained in the Nastran Test Problem Library (TPL).
             
@@ -326,34 +452,34 @@ classdef TestMatran < matlab.unittest.TestCase
             TPLTextImportFiles = getFilePath(obj, TPLTextImportFiles, 'tpl');
             if isempty(TPLTextImportFiles)
                 warning(['Update the ''PathToNastranTPL'' preference ', ...
-                    'to access files in the Nastran Test Problem Library']);                
+                    'to access files in the Nastran Test Problem Library']);
                 return
             end
             
-            importThenDraw(obj, TPLTextImportFiles);
+            importModelThenDraw(obj, TPLTextImportFiles);
         end
-        function importFromTextFile(obj, TextImportFiles)
-            %importFromTPLTextFile Attempts to import a FE model from a
+        function importBulkTextFile(obj, TextImportFiles)
+            %importBulkTPLTextFile Attempts to import a FE model from a
             %text file using the standard Nastran input format.
             
             %Assume the file is contained in the 'models' directory
             TextImportFiles = getFilePath(obj, TextImportFiles, 'model');
-            importThenDraw(obj, TextImportFiles);
-        end        
-        function importFromAutoH5File(obj, AutoH5Files)
-            %importFromAutoH5File Attempts to import a FE model from a
+            importModelThenDraw(obj, TextImportFiles);
+        end
+        function importBulkAutoH5File(obj, AutoH5Files)
+            %importBulkAutoH5File Attempts to import a FE model from a
             %MSC.Nastran HDF5 file.
-            importThenDraw(obj, AutoH5Files);            
+            importModelThenDraw(obj, AutoH5Files);
         end
         function importBdfAndH5ThenCompare(obj, AutoH5Files)
             %importBdfAndH5ThenCompare Attempts to import a FE model from a
-            %text file from the TPL and the associated MSC.Nastran HDF5 
+            %text file from the TPL and the associated MSC.Nastran HDF5
             %file, then compares the two FEMs for equality.
             
             %Get the corresponding bdf import file
             [~, nam, ~]  = fileparts(AutoH5Files);
             allTextFiles = obj.AllTextImportFiles;
-            [~, txtNames, ~] = obj.getFileParts(allTextFiles);     
+            [~, txtNames, ~] = obj.getFileParts(allTextFiles);
             idx = ismember(strcat(lower(txtNames), '_temp'), nam);
             assert(nnz(idx) == 1, sprintf(['Unable to find the text '  , ...
                 'import file that corresponds to the .h5 file ''%s''.'], ...
@@ -361,8 +487,8 @@ classdef TestMatran < matlab.unittest.TestCase
             txtFile = allTextFiles{idx};
             
             %Import then compare
-            FEM_bdf = importThenDraw(obj, txtFile);            
-            FEM_h5  = importThenDraw(obj, AutoH5Files);
+            FEM_bdf = importModelThenDraw(obj, txtFile);
+            FEM_h5  = importModelThenDraw(obj, AutoH5Files);
             if ~isequal(FEM_bdf, FEM_h5)
                 %If the FEMs are inequal it is likely
                 prp_bdf = FEM_bdf.BulkDataNames;
@@ -394,18 +520,52 @@ classdef TestMatran < matlab.unittest.TestCase
             h5Files  = obj.AutoH5Files;
             filename = h5Files{1};
             
-%             if ischar(LogFcn)
-%                 fid = fopen(LogFcn, 'w');
-%                 LogFcn = @(fid)logger([], [], [], fid);
-%                 bClose = true;
-%             else
-%                 bClose = false;
-%             end
+            %             if ischar(LogFcn)
+            %                 fid = fopen(LogFcn, 'w');
+            %                 LogFcn = @(fid)logger([], [], [], fid);
+            %                 bClose = true;
+            %             else
+            %                 bClose = false;
+            %             end
             
             mni.import_matran(filename, 'Verbose', Verbose); %, 'LogFcn', LogFcn);
-%             if bClose
-%                 fclose(fid);
-%             end
+            %             if bClose
+            %                 fclose(fid);
+            %             end
+        end
+        function importH5ThenCheckRotMat(obj, AutoH5Files)
+            %importH5ThenCheckRotMat Imports the FEM from the MSC.Nastran 
+            %HDF5 file and checks that the rotation matrix calculated by
+            %the mni.bulk.CoordSys object matches the rotation matrix in
+            %the h5 file.
+            
+            tol = 1e-6; %tolerance for checking equality
+            
+            FEM = importModelThenDraw(obj, AutoH5Files);
+            
+            %Rotation matrix calculated by Matran
+            CoordSys = getItem(FEM, 'mni.bulk.CoordSystem', true);
+            if isempty(CoordSys)
+                return
+            end
+            rmat = getRotationMatrix(CoordSys);
+            rmat = reshape(rmat, [9, size(rmat, 3)]);
+            
+            %Rotation matrix returned by the .h5 file
+            %   - Assume that each rotation matrix has 12 elements. If not
+            %   then we need to use the index data (see commented out code)
+            %index = h5read(AutoH5Files, '/NASTRAN/INPUT/COORDINATE_SYSTEM/TRANSFORMATION/IDENTITY');
+            data  = h5read(AutoH5Files, '/NASTRAN/INPUT/COORDINATE_SYSTEM/TRANSFORMATION/RDATA');
+            %lb = index.RINDEX;
+            %ub = lb + 11;   %each rotation matrix has 12 elements (translation & rotation)
+            %rmat_h5 = arrayfun(@(ii) data.DATA(lb(ii) : ub(ii)), 1 : numel(lb), 'Unif', false);
+            nElem = 12;
+            rtmat_h5 = reshape(data.DATA, [nElem, numel(data.DATA) / nElem]);
+            rmat_h5  = rtmat_h5(4 : end, :);
+            clear data
+            assert(all(all((rmat - rmat_h5) < tol)), ['Matran and ', ...
+                'Nastran rotation matrices not equal.']);
+
         end
     end
     methods (TestMethodTeardown)
@@ -416,7 +576,7 @@ classdef TestMatran < matlab.unittest.TestCase
         end
     end
     methods % getFilePath, getAllTextImportFiles
-       function filename = getFilePath(obj, filename, type)
+        function filename = getFilePath(obj, filename, type)
             %getFilePath Helper method for providing the full-file path
             %based on whether the file is part of the Nastran TPL or is
             %pacakged in the 'models' subdirectory.
@@ -426,51 +586,61 @@ classdef TestMatran < matlab.unittest.TestCase
                     if isempty(loc)
                         filename = [];
                         return
-                    end                    
+                    end
                 case 'model'
-                    %loc = fileparts(matlab.desktop.editor.getActiveFilename);
+                    %These files are sensitive and are only hosted on the
+                    %local machine (outside of the repo)
                     loc = fileparts(mfilename('fullpath'));
-                    loc = fullfile(loc, 'models');
-                otherwise 
+                    loc = fullfile(fileparts(fileparts(loc)), 'Matran_test_data');
+                otherwise
                     validatestring(filename, {'tpl', 'model'});
-            end            
-            filename = fullfile(loc, filename);
-       end 
-       function txtFiles = getAllTextImportFiles(obj, bSort)
-           %getAllTextImportFiles Returns the complete list of the TPL and
-           %MODEL import files.
-           %
-           % If 'bSort' = true the text import files are matched against
-           % the list of .h5 files returned by 'getH5files'.
-           
-           if nargin < 2
-               bSort = false;
-           end
-           tplFiles = getFilePath(obj, obj.TPLTextImportFiles, 'tpl');
-           mdlFiles = getFilePath(obj, obj.TextImportFiles   , 'model');
-           txtFiles = horzcat(tplFiles, mdlFiles);
-           
-           if bSort %Sort w.r.t h5 file list
-               h5Files  = getH5files;
-               %TODO - Run check to see what files are missing.
-               assert(numel(txtFiles) == numel(h5Files), ['Expected '   , ...
-                   'there to be the same number of .bdf and .h5 files. ', ...
-                   'Make sure all text import cases have been run to '  , ...
-                   'generate the corresponding .h5 files.']);
-               %Get the name of each file and use it to sort the list
-               [~, bdfNames, ~] = obj.getFileParts(txtFiles);
-               [~, index]       = sort(bdfNames);
-               txtFiles         = txtFiles(index);
-           end
-           
-       end
+            end
+            if isfolder(loc)
+                filename = fullfile(loc, filename);
+            else
+                filename = '';
+            end
+        end
+        function txtFiles = getAllTextImportFiles(obj, bSort)
+            %getAllTextImportFiles Returns the complete list of the TPL and
+            %MODEL import files.
+            %
+            % If 'bSort' = true the text import files are matched against
+            % the list of .h5 files returned by 'getH5files'.
+            
+            if nargin < 2
+                bSort = false;
+            end
+            tplFiles = getFilePath(obj, obj.TPLTextImportFiles, 'tpl');
+            mdlFiles = getFilePath(obj, obj.TextImportFiles   , 'model');
+            txtFiles = horzcat(tplFiles, mdlFiles);
+            
+            if bSort %Sort w.r.t h5 file list
+                h5Files  = getH5files;
+                %TODO - Run check to see what files are missing.
+                assert(numel(txtFiles) == numel(h5Files), ['Expected '   , ...
+                    'there to be the same number of .bdf and .h5 files. ', ...
+                    'Make sure all text import cases have been run to '  , ...
+                    'generate the corresponding .h5 files.']);
+                %Get the name of each file and use it to sort the list
+                [~, bdfNames, ~] = obj.getFileParts(txtFiles);
+                [~, index]       = sort(bdfNames);
+                txtFiles         = txtFiles(index);
+            end
+            
+        end
     end
-    methods (Access = private) % importThenDraw
-        function FEM = importThenDraw(obj, filename)
-            %importThenDraw Imports the model from the Nastran text file
+    methods (Access = private) % importModelThenDraw
+        function FEM = importModelThenDraw(obj, filename)
+            %importModelThenDraw Imports the FE model from the Nastran text file
             %'filename' and draws the model.
             
-            FEM = mni.import_matran(filename, 'Verbose', false);
+            FEM = [];
+            if isempty(filename)
+                return                
+            end
+            
+            FEM = mni.import_matran(filename, 'Verbose', false, 'ImportMode', 'input_only');
             
             %obj.UnknownBulk = Meta.UnknownBulk;
             
@@ -488,10 +658,12 @@ classdef TestMatran < matlab.unittest.TestCase
         end
     end
     
+    %Helper functions
     methods (Static)
         function [path, nam, ext] = getFileParts(files)
             %getFileParts Returns a cell-array of file paths, names and
             %extensions from a cell-array of fully-qualified files.
+            
             ind_sep = cellfun(@(x) strfind(x, filesep), files, 'Unif', false);
             ind_ext = cellfun(@(x) strfind(x, '.')    , files, 'Unif', false);
             ind_sep(cellfun(@isempty, ind_sep)) = {0};
@@ -503,6 +675,63 @@ classdef TestMatran < matlab.unittest.TestCase
                 1 : numel(ind_sep), 'Unif', false);
             ext  = arrayfun(@(ii) files{ii}(ind_ext(ii) : end), ...
                 1 : numel(ind_sep), 'Unif', false);
+        end
+        function instantiableClasses = getAllInstatiableClasses
+            %getAllInstantiableClasses Returns the name of all classes in
+            %the Matran package that can be instantitated. i.e. classes
+            %that are not abstract.
+            
+            allClasses          = TestMatran.getAllClasses;
+            instantiableClasses = TestMatran.screenAbstractClass(allClasses);
+        end
+        function allClasses  = getAllClasses
+            %getAllClasses Returns a list of all classes in the Matran
+            %package.
+            %
+            % Package folders searched:
+            %   +bulk
+            %   +result
+            
+            package_list = {'+result', '+bulk', '+mixin'};            
+            allClasses = cellfun(@(x) TestMatran.getPackageClass(x), package_list, 'Unif', false);
+            allClasses = horzcat(allClasses{:});
+        end
+        function bulkClasses = getBulkClasses
+            %getBulkClasses Returns a list of all bulk data classes in the
+            %mni.bulk package.
+            
+            bulkClasses = TestMatran.getPackageClass('+bulk');
+        end
+        function classList = getPackageClass(packageName)
+            %getPackageClass Returns a list of all the classes in the
+            %package given by 'packageName' which is located as a subfolder
+            %of the 'tbx/matran/+mni' folder.
+            %
+            % TODO - Recurse through subfolders
+            
+            %Get location of the +bulk folder
+            sandbox_loc = fileparts(fileparts(mfilename('fullpath')));
+            bulk_loc    = fullfile(sandbox_loc, 'tbx', 'matran', '+mni', packageName);
+            
+            prefix = ['mni.', strrep(packageName, '+', '')];
+            
+            %Find all classes in the +bulk package folder
+            contents = dir(bulk_loc);
+            
+            fNames = cell(1, numel(contents));
+            for ii = 1 : numel(fNames)
+                [~, fNames{ii}, ~] = fileparts(contents(ii).name);
+            end
+            fNames = strcat([prefix, '.'], fNames);
+            val = cellfun(@(x) exist(x, 'class'), fNames);
+            classList = fNames(val ~= 0);
+            
+            assert(~isempty(classList), sprintf(['No classes found ', ...
+                'in the %s package folder. Check the codebase.'], prefix));
+        end
+        function instantiableClasses = screenAbstractClass(classList)
+            mc = cellfun(@(x) meta.class.fromName(x), classList);
+            instantiableClasses = classList(~[mc.Abstract]);
         end
     end
     

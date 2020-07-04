@@ -1,40 +1,44 @@
-classdef FEModel < matlab.mixin.SetGet & mni.mixin.Dynamicable
+classdef FEModel < mni.mixin.Collector
     %FEModel Describes a collection of bulk data objects to which results
     %sets can be attached to.
     %
     % Detailed Description:
     %   -
     %
+    % See also: mni.mixin.Collector
+    %
     % TODO - Add a method for tidying up the PBEAM/PBAR entries and
     % defining default values.
     
-    properties (SetAccess = private, Hidden = true)
-        %Cell array of character vectors containing the names of the bulk
-        %data properties added using the 'addBulk' method.
-        BulkDataNames = {};
+    properties (Dependent)
+        %Names of the bulk data properties in the collection
+        BulkDataNames 
+    end
+    
+    properties (SetAccess = private)
+        %Cell array of transformation matrices from local-to-basic
+        %coordinate system and associated CoordSys ID numbers
+        TransformationMatrices
+    end
+    
+    methods % set / get
+        function val = get.BulkDataNames(obj) %get.BulkDataNames
+            val = obj.ItemNames;
+        end
+    end
+    
+    methods % construction
+        function obj = FEModel
+            
+            %Update collection parameters
+            obj.CollectionClass       = 'mni.bulk.BulkData';
+            obj.CollectionDescription = 'bulk data';
+            obj.AssignMethod          = @combine;
+            
+        end
     end
     
     methods (Sealed) % managing a collection of bulk data
-        function addBulk(obj, BulkObj)
-            %addBulk Adds the 'BulkObj' to the FEModel as a dynamic
-            %property.
-            
-            assert(isa(BulkObj, 'mni.bulk.BulkData'), ['Expected the bulk ', ...
-                'data object to be a subclass of the ''mni.bulk.BulkData'' class.']);
-            cn = BulkObj.CardName;
-            if isempty(cn)
-                return
-            end
-            
-            if isprop(obj, cn)
-                combine([obj.(cn), BulkObj]);
-            else                
-                addDynamicProp(obj, cn);
-                obj.(cn) = BulkObj;
-                obj.BulkDataNames = [obj.BulkDataNames, {cn}];
-            end
-            
-        end
         function makeIndices(obj)
             %makeIndices Builds the connections between different bulk data
             %objects in the model.
@@ -113,6 +117,22 @@ classdef FEModel < matlab.mixin.SetGet & mni.mixin.Dynamicable
                     obj.(bulkNames{iB}).([Con(iC).DynProp, 'Index']) = index;
                 end
             end
+            
+        end
+        function rMat = makeCoordSys(obj)
+            %makeCoordSys Constructs the coordinate system transformation
+            %matrices for all non-basic coordinate systems in the FEModel.
+            
+            rMat = [];
+            if ~any(ismember(obj.UniqueClass, 'mni.bulk.CoordSystem'))
+                return
+            end
+            
+            CoordSys = getItem(obj, 'mni.bulk.CoordSystem', true);
+            assert(numel(CoordSys) == 1 && strcmp(CoordSys.Name, 'CORD2R'), ...
+                'Update code for new coordinate sytems.');
+            
+            rmat = getRotationMatrix(CoordSys);
             
         end
         function summary = summarise(obj)
@@ -223,7 +243,7 @@ classdef FEModel < matlab.mixin.SetGet & mni.mixin.Dynamicable
                 if ~isprop(obj(1), bulkNames{iB})
                     fcn    = str2func(class(BulkObj));
                     NewObj = fcn(nam, numel(prpVal{1}));
-                    addBulk(obj(1), NewObj);
+                    addItem(obj(1), NewObj);
                 end
                 set(obj(1).(nam), prpNames, prpVal);
             end
@@ -245,7 +265,7 @@ classdef FEModel < matlab.mixin.SetGet & mni.mixin.Dynamicable
             
             if nargin < 2 || isempty(hAx)
                 hF  = figure('Name', 'Finite Element Model');
-                hAx = axes('Parent',hF, 'NextPlot', 'add', 'Box', 'on');
+                hAx = axes('Parent', hF, 'NextPlot', 'add', 'Box', 'on');
                 xlabel(hAx, 'X');
                 ylabel(hAx, 'Y');
                 zlabel(hAx, 'Z');

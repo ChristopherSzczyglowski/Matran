@@ -1,4 +1,4 @@
-function [FEModel, FileMeta] = importBulkData(filename, logfcn)
+function [FEModel, FileMeta] = importBulkData(filename, logfcn, varargin)
 %importBulkData Imports the Nastran bulk data from a ASCII text file and
 %returns a 'mni.bulk.FEModel' object containing the data.
 %
@@ -190,7 +190,7 @@ for iCard = 1 : numel(cardNames)
         logfcn('');
         
         %Add object to the model
-        addBulk(FEM, BulkObj);
+        addItem(FEM, BulkObj);
         
         clear card
         

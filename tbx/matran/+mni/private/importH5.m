@@ -1,14 +1,22 @@
-function  [FEModel, FileMeta] = importH5(filename, logfcn)
-%importH5 Imports the Nastran bulk data from a HDF5 file and returns a 
-%'mni.bulk.FEModel' object containing the data.
+function  [MatranData, FileMeta] = importH5(filename, logfcn, varargin)
+%importH5 Imports the Nastran bulk data and results from a HDF5 file and
+%returns a heterogenous array of mni.mixin.Collector objects containing the
+%data.
 %
 % Syntax:
-%	- Import a model from a MSC.Nastran HDF5 file (.h5)
-%       >> filename = 'myImportFile.h5'
-%       >> FEModel  = importH5(filename)
+%   - Import FE model and results data from MSC.Nastran HDF5 file (default)
+%       >> MatranData = importH5(filename);
+%     Can also be achieved with...
+%       >> MatranData = importH5(filename, 'ImportMode', 'both')
+%	- Import a FE model from a MSC.Nastran HDF5 file
+%       >> FEModel  = importH5(filename, 'ImportMode', 'input_only')
+%   - Import only the results data from a MSC.Nastran HDF5 file
+%       >> ResultsSet = importH5(filename, 'ImportMode', 'result_only')
 %
 % Detailed Description:
 %	- Only valid for MSC.Nastran formatted HDF5 files.
+%   - The .h5 file is parsed before extracting any data to make sure that
+%     the INPUT or RESULT groupsets are available in the file.
 %
 % See also: 
 %
@@ -29,36 +37,74 @@ function  [FEModel, FileMeta] = importH5(filename, logfcn)
 %
 % <end_of_pre_formatted_H1>
 
-if nargin < 2
+FileMeta  = [];
+FEModel   = [];
+ResultSet = [];
+
+bExtractModel   = false;
+bExtractResults = false;
+
+if nargin < 2 || isempty(logfcn)
    logfcn = @logger; %default is to print to command window
 end
 
+p = inputParser;
+addParameter(p, 'ImportMode', 'both', @(x)any(validatestring(x, {'input_only', 'result_only', 'both'})));
+parse(p, varargin{:});
 [~, ~, ext] = fileparts(filename);
 assert(strcmp(ext, '.h5'), '''Filename'' must be the name of a .h5 file');
-assert(checkH5ForModelBulk(filename), sprintf(['The h5 file ''%s'' did ', ...
-    'not contain any input data. Make sure MDLPARAM HDF5 is set to '      , ...
-    'either 0 or 1 in the run file.'], filename));
-
-FEModel      = mni.bulk.FEModel;
-FileMeta     = [];
-BulkDataMask = defineBulkMask;
-UnknownBulk  = {};
 
 logfcn(sprintf('Beginning file read of file ''%s'' ...', filename));
 
-%Traverse the hierachy
-MetaGroup = h5info(filename, '/NASTRAN/INPUT');     
-[FEModel, skippedCards] = extractData(filename, MetaGroup, FEModel, BulkDataMask, logfcn, UnknownBulk);
+%Prep the inputs
+if any(strcmp(p.Results.ImportMode, {'both', 'input_only'}))
+    bExtractModel = true;
+end
+if any(strcmp(p.Results.ImportMode, {'both', 'result_only'}))
+    bExtractResults = true;    
+end
+    
+if bExtractModel   && checkH5Groups(filename, 'INPUT')  %Import the model
+    
+    %Set up variables
+    FEModel      = mni.bulk.FEModel;
+    BulkDataMask = defineBulkMask;
+    UnknownBulk  = {};
+    
+    %Import the data
+    MetaGroup = h5info(filename, '/NASTRAN/INPUT');
+    [FEModel, skippedCards] = extractData(filename, MetaGroup, FEModel, BulkDataMask, logfcn, UnknownBulk);
+    
+    %Format the meta data
+    FileMeta.SkippedBulk = skippedCards;
+    FileMeta.UnknownBulk = strtrim(cellfun(@(x) x(1 : strfind(x, '-') - 1), skippedCards, 'Unif', false));
+    
+else
+    warning(['The h5 file ''%s'' did not contain any input data. ', ...
+        'Make sure MDLPARAM HDF5 is set to either 0 or 1 in the ' , ...
+        'run file.'], filename);
+end
+if bExtractResults && checkH5Groups(filename, 'RESULT') %Import the results
+     [ResultSet, UnknownResults] = extractH5Results(filename, logfcn);
+elseif bExtractResults
+    warning(['The h5 file ''%s'' did not contain any results ', ...
+        'data. Make sure MDLPARAM HDF5 is set to 0, 1, 2 or 3 ', ...
+        'in the run file.'], filename);
+end
 
-FileMeta.SkippedBulk = skippedCards;
-FileMeta.UnknownBulk = strtrim(cellfun(@(x) x(1 : strfind(x, '-') - 1), skippedCards, 'Unif', false));
+MatranData = horzcat(FEModel, ResultSet);
 
 end
 
-function tf = checkH5ForModelBulk(h5Filename)
+function tf = checkH5Groups(h5Filename, tok)
 %checkH5ForModelBulk Checks that the h5 file contains Nastran input data.
 
 tf = false;
+
+if nargin < 1
+    tok = 'INPUT';
+end
+tok = validatestring(tok, {'INPUT', 'RESULT'});
 
 %Peek inside the h5 file and make sure it has the group 'NASTRAN/INPUTS'
 Meta = h5info(h5Filename);
@@ -69,7 +115,7 @@ if ~ismember('/NASTRAN', {Meta.Groups.Name})
     return
 end
 nas_grp = Meta.Groups(ismember({Meta.Groups.Name}, '/NASTRAN'));
-if ~ismember('/NASTRAN/INPUT', {nas_grp.Groups.Name})
+if ~ismember(['/NASTRAN/', tok], {nas_grp.Groups.Name})
     return
 end
 tf = true;
@@ -77,13 +123,8 @@ tf = true;
 end
 
 function [FEM, UnknownBulk] = extractData(filename, MetaGroup, FEM, BulkDataMask, logfcn, UnknownBulk)
-%findDataSet Extracts all the data from the .h5 file 'filename' into a
-%Matlab structure which preserves the .h5 data hierachy.
-%
-% Assumptions:
-%   - Assume that a structure with a non-empty 'Datasets' field is a root
-%     structure. The structure above this one is the parent containing the
-%     group name.
+%extractData Extracts the bulk data from the .h5 file and returns a finite
+%element model.
 
 allBulkNames = fieldnames(BulkDataMask);
 
@@ -123,7 +164,7 @@ if isempty(cn) && ~isempty(MetaGroup.Datasets)
         %Assign the card data
         assignH5BulkData(BulkObj, bulkNames, bulkData);        
         %Add object to the model
-        addBulk(FEM, BulkObj);
+        addItem(FEM, BulkObj);
     end
 else
     [bClass, str] = isMatranClass(cn, BulkDataMask);
@@ -138,7 +179,7 @@ else
         [bulkNames, bulkData] = parseH5DataGroup(BulkObj, h5Struct);
         assignH5BulkData(BulkObj, bulkNames, bulkData);  
         %Add object to the model
-        addBulk(FEM, BulkObj);           
+        addItem(FEM, BulkObj);           
         %Remove this group from the list so that we don't get duplicates
         metagroupNames(contains(metagroupNames, MetaGroup.Name)) = [];
     else
@@ -194,37 +235,6 @@ else
     cardName = token;
     
 end
-
-
-end
-
-function [bulkNames, bulkData, nCard] = parseH5Data(filename, groupset)
-
-%Use built-in 'h5read' to extract data
-BulkStruct = h5read(filename, groupset);
-bulkNames  = fieldnames(BulkStruct)';
-bulkData   = struct2cell(BulkStruct)'; %MUST BE A ROW VECTOR TO USE 'set(obj, ...)'
-
-%Strip DOMAIN_ID (if present)
-idx = ismember(bulkNames, 'DOMAIN_ID');
-bulkNames(idx) = [];
-bulkData(idx)  = [];
-
-%Convert char data to cell-str
-idxChar = cellfun(@ischar, bulkData);
-bulkData(idxChar) = cellfun(@(x) cellstr(x'), bulkData(idxChar), 'Unif', false);
-
-%Determine number of cards
-n = cellfun(@length, bulkData(not(cellfun(@ischar, bulkData))));
-if any(diff(n) ~= 0)
-    nCard = mode(n);
-else
-    nCard = n(1);
-end
-
-%Transpose data where nRows == nCard
-idxMismatch = (cellfun(@(x) size(x, 1), bulkData) == nCard);
-bulkData(idxMismatch)  = cellfun(@transpose, bulkData(idxMismatch), 'Unif', false);
 
 end
 

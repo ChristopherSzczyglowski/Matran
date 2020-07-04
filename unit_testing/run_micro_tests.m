@@ -7,8 +7,8 @@
 %
 % Detailed Description:
 %	-  Executes the unit tests which ensure basic functionality. 
-%       + Test object construction
-%       + Test object methods 
+%       + Object construction (Matran/bulk/dynamicable)
+%       + Object methods (get, isequal, addItem)
 %
 % See also: matlab.unittest.TestSuite
 %           matlab.unittest.TestRunner
@@ -32,14 +32,15 @@
 import matlab.unittest.TestSuite
 import matlab.unittest.TestRunner
 
-mc   = ?TestMatran;
-dyn  = TestSuite.fromClass(mc, 'ProcedureName','*dynamicable*');
-bulk = TestSuite.fromClass(mc, 'ProcedureName','*bulk*');
+tests = TestSuite.fromClass(?TestMatran);
+names = {tests.ProcedureName};
+idx = any([ ...
+    startsWith(names, 'dynamicable') ; ...
+    startsWith(names, 'bulk')        ; ...
+    startsWith(names, 'obj')         ; ...
+    startsWith(names, 'collector')]);
+suite = tests(idx);
 
-dyn  = dyn(startsWith({dyn.ProcedureName}  , 'dynamicable'));
-bulk = bulk(startsWith({bulk.ProcedureName}, 'bulk'));
-
-suite = [dyn, bulk];
 TestResults  = run(suite);
 ResultsTable = table(TestResults);
 disp(ResultsTable)
