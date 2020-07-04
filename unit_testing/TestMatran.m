@@ -588,10 +588,7 @@ classdef TestMatran < matlab.unittest.TestCase
                         return
                     end
                 case 'model'
-                    %These files are sensitive and are only hosted on the
-                    %local machine (outside of the repo)
-                    loc = fileparts(mfilename('fullpath'));
-                    loc = fullfile(fileparts(fileparts(loc)), 'Matran_test_data');
+                    loc = getModelLocation;
                 otherwise
                     validatestring(filename, {'tpl', 'model'});
             end
@@ -636,7 +633,7 @@ classdef TestMatran < matlab.unittest.TestCase
             %'filename' and draws the model.
             
             FEM = [];
-            if isempty(filename)
+            if isempty(filename) || exist(filename, 'file') == 0
                 return                
             end
             
@@ -741,11 +738,20 @@ function h5FileList = getH5files
 %getH5files Get the list of .h5 files in the
 %'models\auto_generated_h5_data' directory sorted in alphabetical order.
 
-modelLoc = 'models\auto_generated_h5_data';
-path     = fullfile(fileparts(mfilename('fullpath')), modelLoc);
+modelLoc = getModelLocation;
+assert(isfolder(modelLoc), ['Unable to located the folder ', ...
+    '''Matran_test_data'' in the parent directory to this repo.'])    
+path = fullfile(modelLoc, 'auto_generated_h5_data');
 
 Contents = dir(path);
 idx = endsWith({Contents.name}, '.h5');
 h5FileList = fullfile(path, sort({Contents(idx).name}));
 
+end
+
+function loc =  getModelLocation
+%These files are sensitive and are only hosted on the
+%local machine (outside of the repo)
+this_dir = fileparts(mfilename('fullpath'));
+loc      = fullfile(fileparts(fileparts(this_dir)), 'Matran_test_data');
 end

@@ -1,8 +1,0 @@
-SOL 103
-DISPLACEMENT = ALL
-METHOD = 123
-BEGINBULK
-EIGRL   123     0.0             20      
-INCLUDE 'C:\Users\cs1414\Documents\GitRepos\Matran_new\models
-         \auto_generated_h5_data\sol_103_pod_fwd_pc_temp.bdf'
-ENDDATA

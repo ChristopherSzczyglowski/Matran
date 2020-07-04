@@ -1,7 +1,0 @@
-EIGRL   1       -1.     50.                              
-MAT1    1       1.0E7           0.33    2.59E-4
-PARAM,GRDPNT,0
-INCLUDE 'C:\Program Files\MSC.Software\MSC_Nastran_Documentation\20180
-         \tpl\doc\dynamics\bd03cars.dat'
-INCLUDE 'C:\Program Files\MSC.Software\MSC_Nastran_Documentation\20180
-         \tpl\doc\dynamics\bd03carb.dat'
