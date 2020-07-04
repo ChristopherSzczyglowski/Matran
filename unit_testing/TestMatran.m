@@ -135,10 +135,6 @@ classdef TestMatran < matlab.unittest.TestCase
     methods % construction
         function obj = TestMatran(varargin)
             
-            %Make sure 'models' folder is accessible
-            %TODO - Add this as a test fixture
-            addpath(genpath(fullfile(fileparts(mfilename('fullpath')), 'models')));
-            
             p = inputParser;
             addParameter(p, 'CheckBulkCoverage', false, @(x)validateattributes(x, {'logical'}, {'scalar'}));
             parse(p, varargin{:});
@@ -592,13 +588,18 @@ classdef TestMatran < matlab.unittest.TestCase
                         return
                     end
                 case 'model'
-                    %loc = fileparts(matlab.desktop.editor.getActiveFilename);
+                    %These files are sensitive and are only hosted on the
+                    %local machine (outside of the repo)
                     loc = fileparts(mfilename('fullpath'));
-                    loc = fullfile(loc, 'models');
+                    loc = fullfile(fileparts(fileparts(loc)), 'Matran_test_data');
                 otherwise
                     validatestring(filename, {'tpl', 'model'});
             end
-            filename = fullfile(loc, filename);
+            if isfolder(loc)
+                filename = fullfile(loc, filename);
+            else
+                filename = '';
+            end
         end
         function txtFiles = getAllTextImportFiles(obj, bSort)
             %getAllTextImportFiles Returns the complete list of the TPL and
@@ -633,6 +634,11 @@ classdef TestMatran < matlab.unittest.TestCase
         function FEM = importModelThenDraw(obj, filename)
             %importModelThenDraw Imports the FE model from the Nastran text file
             %'filename' and draws the model.
+            
+            FEM = [];
+            if isempty(filename)
+                return                
+            end
             
             FEM = mni.import_matran(filename, 'Verbose', false, 'ImportMode', 'input_only');
             
