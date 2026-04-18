@@ -1,7 +1,9 @@
+> [!IMPORTANT]
+> This repository is in maintainance mode and is not being actively developed.
+> You are welcome to fork this repository and keep the Matran dream alive!
+
 # Matran
 A collection of functions and classes for importing Nastran bulk data and visualising results. 
-
-**This repository is currently under development and is not ready for general use. Any feedback is much appreciated!**
 
 ## Getting Started
 
